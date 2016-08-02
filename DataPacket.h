@@ -49,6 +49,9 @@ class DataPacket: public LoRaPacket
 		
 		//resets the content of the packet back to 0 ->> all data will be removed
 		void Reset();
+		
+		//get the data size of the packet
+		unsigned char GetDataSize();
 	private:	
 		//define the stores for all the values for this packet
 		char stringValues[48];

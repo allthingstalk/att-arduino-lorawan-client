@@ -101,3 +101,23 @@ void DataPacket::Reset()
 	nrBools = 0;
 	boolValues = 0;
 }
+
+unsigned char DataPacket::GetDataSize() {
+	unsigned char cnt = 6;	// LoRaPacket header size;
+
+	if (nrInts > 0) {
+		cnt += 1;
+		cnt += nrInts * sizeof intValues[0];
+	} else if (nrFloats > 0 || stringPos > 0) {
+		cnt += 1;
+	}
+	if (nrFloats > 0) {
+		cnt += 1;
+		cnt += nrFloats * sizeof floatValues[0];
+	} else if (stringPos > 0) {
+		cnt += 1;
+	}
+	cnt += stringPos;
+	cnt += 1; // crc
+	return cnt;
+}

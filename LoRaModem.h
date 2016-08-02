@@ -41,6 +41,9 @@ class LoRaModem
 		virtual int GetParam(instrumentationParam param) = 0;
 		//returns the id number of the modem type. See the container definition for the instrumentation container to see more details.
 		virtual int GetModemId() = 0;
+		
+		//calcualte the max payload size, based on the current spreading factor of the modem. Used to check if the packet can be sent.
+		int maxPayloadForSF(short spreading_factor = -1);
 };
 
 #endif

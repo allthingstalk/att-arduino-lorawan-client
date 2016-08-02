@@ -77,6 +77,10 @@ bool InstrumentationPacket::SetParam(instrumentationParam param, int value)
 			_data[7] = value;
 			return true;
 		default: return false;
-	}
-			
+	}	
+}
+
+unsigned char InstrumentationPacket::GetDataSize() {
+	unsigned char cnt = 6;	// LoRaPacket header size;
+	return cnt + INST_DATA_SiZE;
 }

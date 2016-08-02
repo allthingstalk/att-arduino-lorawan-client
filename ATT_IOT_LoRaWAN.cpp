@@ -158,19 +158,31 @@ bool ATTDevice::Send(short id, bool ack)
 	return Send(&_data, ack);
 }
 
+
 bool ATTDevice::Send(LoRaPacket* data, bool ack)
 {
+	//check if the packet is not too big
+	byte packetSize = data->GetDataSize();
+	if(packetSize > _modem->maxPayloadForSF()){
+		PRINTLNF("Data size exceeds limitations for current spreading factor.")
+		return false;
+	}
 	short nrRetries = 0;
 	unsigned long curTime = millis();
 	if(_lastTimeSent != 0 && _lastTimeSent + _minTimeBetweenSend > curTime)
 	{
-		PRINT("adhering to LoRa bandwith usage, delaying next message for ");
-		PRINT((_minTimeBetweenSend + _lastTimeSent - curTime)/1000); PRINTLN(" seconds");
-		delay(_minTimeBetweenSend + _lastTimeSent - curTime);
+		//PRINT("adhering to LoRa bandwith usage, delaying next message for ");
+		//PRINT((_minTimeBetweenSend + _lastTimeSent - curTime)/1000); PRINTLN(" seconds");
+		//delay(_minTimeBetweenSend + _lastTimeSent - curTime);
+		PRINTLN("packet sent too quickly");
+		return false;
 	}
+	// calculate BEFORE or AFTER send ??  (-> sf might change ... before would be the actual value used in send)
+	float toa = calculateTimeOnAir(packSize); // calculate for current settings, so BEFORE send !!
 	bool res = _modem->Send(data, ack);
 	data->Reset();				//make certain packet doesn't contain any values any more for the next run. This allows us to easily build up partials as well
 	_lastTimeSent = millis();
+	_minTimeBetweenSend = ceil(toa * 100);			//dynamically adjust
 	return res;
 }
 

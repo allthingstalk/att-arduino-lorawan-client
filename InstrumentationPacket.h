@@ -31,7 +31,10 @@ class InstrumentationPacket: public LoRaPacket
 		//resets the content of the packet back to 0 ->> all data will be removed
 		void Reset();
 		
-		bool SetParam(instrumentationParam param, int value);
+		bool SetParam(instrumentationParam param, int value); 
+		
+		//get the data size of the packet
+		unsigned char GetDataSize();
 	protected:
 		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
 		unsigned char getFrameType();
