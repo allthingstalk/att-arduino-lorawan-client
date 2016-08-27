@@ -8,13 +8,36 @@ Original author: Jan Bogaerts (2015)
 #ifndef LoRaModem_h
 #define LoRaModem_h
 
-#include <LoRaPacket.h>
+#if defined(ARDUINO) && ARDUINO >= 100
+  #include "arduino.h"
+#else
+  #include "WProgram.h"
+#endif
+
 #include <instrumentationParamEnum.h>
+
+#define SENDSTATE_TRANSMITCOMMAND 0				//3 states used to track async send status
+#define SENDSTATE_EXPECTOK 1
+#define SENDSTATE_GETRESPONSE 2
+#define SENDSTATE_DONE 3
+
+#define MAX_PAYLOAD_SIZE 222					//maximum allowed size for a payload
+#define SMALLEST_PAYLOAD_SIZE 51			 	//the payload size for the biggest sf
+
+
+//callback signature for functions that process data coming from the NSP that were send to the device
+//first param: start of byte array that was found
+//second param: the length of the package
+#define ATT_CALLBACK_SIGNATURE void (*callback)(const uint8_t*,unsigned int)
 
 //this class represents the ATT cloud platform.
 class LoRaModem
 {
 	public:
+		///create modem objects
+		//MQTT_CALLBACK_SIGNATURE: assign a callback function that is called when incoming data (from nsp to device) needs to be processed
+		LoRaModem(Stream *monitor, ATT_CALLBACK_SIGNATURE = NULL);
+	
 		// Returns the required baudrate for the device
 		virtual unsigned int getDefaultBaudRate() = 0;
 		//stop the modem.
@@ -34,7 +57,19 @@ class LoRaModem
 		virtual bool Start() = 0;
 		//send a data packet to the server
 		//ack = true -> request ack
-		virtual bool Send(LoRaPacket* packet, bool ack = true) = 0;
+		virtual bool Send(void* packet, unsigned char size, bool ack = true);
+		
+		//start the send process, but return before everything is done.
+		//returns true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
+		virtual bool SendAsync(void* packet, unsigned char size, bool ack = true) = 0;
+		//checks the status of the current send operation (if there was any).
+		//if there was none or the operation is done, then true is done. 
+		//the result of the send operation is returned  in the param 'sendResult'
+		virtual bool CheckSendState(bool& sendResult) = 0;
+		
+		//returns true if the modem can send a payload. If it can't at the moment (still processing another packet), then false is returned.
+		inline bool IsFree(){ return sendState == SENDSTATE_DONE; };
+		
 		//process any incoming packets from the modem
 		virtual void ProcessIncoming() = 0;
 		//extract the specified instrumentation parameter from the modem and return the value
@@ -44,6 +79,24 @@ class LoRaModem
 		
 		//calcualte the max payload size, based on the current spreading factor of the modem. Used to check if the packet can be sent.
 		int maxPayloadForSF(short spreading_factor = -1);
+		
+		float calculateTimeOnAir(unsigned char appPayloadSize, short spreading_factor = -1);
+		
+	protected:
+		Stream *_monitor;
+		void (*_callback)(const uint8_t*,unsigned int);
+		//keeps track of the current async send position: are we waiting for 'ok' or response.
+		char sendState;
+		
+		//stores the previous payload size. This is for in case that the payload size is requested while we are waiting on a response from
+		//the modem. In this case, we can't request the sf from the modem, so we can't calculate the value. Instead we use this buffered val.
+		int _prevPayloadForSF;
+		
+		void printHex(unsigned char hex);
+		
+		float calculateSymbolTime(short spreading_factor = -1, short bandwidth = -1) ;
+		int calculateSymbolsInPayload(unsigned char appPayloadSize, short spreading_factor) ;
+	
 };
 
 #endif

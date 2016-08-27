@@ -3,6 +3,8 @@
 */
 
 #include <InstrumentationPacket.h>
+#define PRINTLN(...) {if(monitor) monitor->println(__VA_ARGS__); }
+#define PRINT(...) {if(monitor) monitor->print(__VA_ARGS__); }
 
 //create the object
 InstrumentationPacket::InstrumentationPacket()
@@ -83,4 +85,74 @@ bool InstrumentationPacket::SetParam(instrumentationParam param, int value)
 unsigned char InstrumentationPacket::GetDataSize() {
 	unsigned char cnt = 6;	// LoRaPacket header size;
 	return cnt + INST_DATA_SiZE;
+}
+
+
+//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
+//it in the object. Also print every value that was collected to the monitor (if any.)
+bool InstrumentationPacket::BuildInstrumentation(LoRaModem& modem, Stream* monitor)
+{
+	PRINTLN("instrumentation values:");
+	SetInstrumentationParam(monitor, MODEM, "modem", modem.GetModemId());
+	SetInstrumentationParam(monitor, DATA_RATE, "data rate", modem.GetParam(DATA_RATE));
+	SetInstrumentationParam(monitor, FREQUENCYBAND, "frequency band", modem.GetParam(FREQUENCYBAND));
+	SetInstrumentationParam(monitor, POWER_INDEX, "power index", modem.GetParam(POWER_INDEX));
+	SetInstrumentationParam(monitor, ADR, "ADR", modem.GetParam(ADR));
+	SetInstrumentationParam(monitor, DUTY_CYCLE, "duty cycle", modem.GetParam(DUTY_CYCLE));
+	SetInstrumentationParam(monitor, GATEWAY_COUNT, "nr of gateways", modem.GetParam(GATEWAY_COUNT));
+	SetInstrumentationParam(monitor, SNR, "SNR", modem.GetParam(SNR));
+	SetInstrumentationParam(monitor, SP_FACTOR, "spreading factor", modem.GetParam(SP_FACTOR));
+	SetInstrumentationParam(monitor, BANDWIDTH, "bandwidth", modem.GetParam(BANDWIDTH));
+	SetInstrumentationParam(monitor, CODING_RATE, "coding rate", modem.GetParam(CODING_RATE));
+	SetInstrumentationParam(monitor, RETRANSMISSION_COUNT, "retransmission count", modem.GetParam(RETRANSMISSION_COUNT));
+}
+
+
+//store the param in the  data packet, and print to serial.
+void InstrumentationPacket::SetInstrumentationParam(Stream* monitor, instrumentationParam param, char* name, int value)
+{
+	SetParam(param, value);
+	PRINT(name);
+	PRINT(": ");
+	switch(param){
+		case MODEM:
+			if(value == 0){ PRINTLN("unknown");}
+			else if(value == 1){ PRINTLN("multitech mdot");}
+			else if(value == 2){ PRINTLN("embit-EMB-LR1272(E)");}
+			else if(value == 3){ PRINTLN("microchip RN2483");}
+			else {PRINT("unknown value: "); PRINTLN(value);}
+			break;
+		case BANDWIDTH:
+			if(value == 0){ PRINTLN("unknown");}
+			else if(value == 1){ PRINTLN("125");}
+			else if(value == 2){ PRINTLN("250");}
+			else if(value == 3){ PRINTLN("500");}
+			else {PRINT("unknown value: "); PRINTLN(value);}
+			break;
+		case CODING_RATE:
+			if(value == 0){ PRINTLN("4/5");}
+			else if(value == 1){ PRINTLN("4/6");}
+			else if(value == 2){ PRINTLN("4/7");}
+			else if(value == 3){ PRINTLN("4/8");}
+			else {PRINT("unknown value: "); PRINTLN(value);}
+			break;
+		case FREQUENCYBAND:
+			if(value == 0){ PRINTLN("433");}
+			else if(value == 1){ PRINTLN("868");}
+			else {PRINT("unknown value: "); PRINTLN(value);}
+			break;
+		case SP_FACTOR:
+			if(value == 0){ PRINTLN("unknown");}
+			else if(value == 1){ PRINTLN("sf7");}
+			else if(value == 2){ PRINTLN("sf8");}
+			else if(value == 3){ PRINTLN("sf9");}
+			else if(value == 4){ PRINTLN("sf10");}
+			else if(value == 5){ PRINTLN("sf11");}
+			else if(value == 6){ PRINTLN("sf12");}
+			else {PRINT("unknown value: "); PRINTLN(value);}
+			break;
+		default: 
+			PRINTLN(value);
+			break;
+	}
 }

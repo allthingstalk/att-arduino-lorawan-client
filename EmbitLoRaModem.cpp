@@ -22,12 +22,9 @@ unsigned char CMD_SEND_PREFIX[4] = { 0x50, 0x0C, 0x00, PORT };
 unsigned char CMD_SEND_PREFIX_NO_ACK[4] = { 0x50, 0x08, 0x00, PORT }; 
 
 
-unsigned char sendBuffer[52];
-
-EmbitLoRaModem::EmbitLoRaModem(Stream* stream, Stream* monitor)
+EmbitLoRaModem::EmbitLoRaModem(Stream* stream, Stream* monitor): LoRaModem(monitor)
 {
 	_stream = stream;
-	_monitor = monitor;
 }
 
 unsigned int EmbitLoRaModem::getDefaultBaudRate() 
@@ -83,19 +80,14 @@ bool EmbitLoRaModem::Start()
 	return true;
 }
 
-bool EmbitLoRaModem::Send(LoRaPacket* packet, bool ack)
+bool EmbitLoRaModem::Send(void* packet, unsigned char size, bool ack)
 {
-	unsigned char length = packet->Write(sendBuffer);
-	PRINTLN("Sending payload: ");
-	for (unsigned char i = 0; i < length; i++) {
-		printHex(sendBuffer[i]);
-	}
-	PRINTLN();
+	LoRaModem::Send(packet, size, ack);
   
 	if(ack == true)
-		SendPacket(CMD_SEND_PREFIX, sizeof(CMD_SEND_PREFIX), (const unsigned char*)sendBuffer, length);
+		SendPacket(CMD_SEND_PREFIX, sizeof(CMD_SEND_PREFIX), (const unsigned char*)packet, size);
 	else
-		SendPacket(CMD_SEND_PREFIX_NO_ACK, sizeof(CMD_SEND_PREFIX_NO_ACK), (const unsigned char*)sendBuffer, length);
+		SendPacket(CMD_SEND_PREFIX_NO_ACK, sizeof(CMD_SEND_PREFIX_NO_ACK), (const unsigned char*)packet, size);
 	unsigned char result = ReadPacket(3);
 	if(result != 0){
 		PRINTLN("Failed to send packet");

@@ -19,12 +19,9 @@ typedef struct StringEnumPair
 	uint8_t enumValue;
 } StringEnumPair;
 
-unsigned char microchipSendBuffer[DEFAULT_PAYLOAD_SIZE];
-
-MicrochipLoRaModem::MicrochipLoRaModem(SerialType* stream, Stream *monitor)
+MicrochipLoRaModem::MicrochipLoRaModem(SerialType* stream, Stream *monitor, ATT_CALLBACK_SIGNATURE): LoRaModem(monitor, callback)
 {
 	_stream = stream;
-	_monitor = monitor;
 }
 
 bool MicrochipLoRaModem::Stop()
@@ -36,7 +33,19 @@ bool MicrochipLoRaModem::Stop()
 	_stream->print(STR_CMD_RESET);
 	_stream->print(CRLF);
 
-	return expectString(STR_DEVICE_TYPE);
+	if(!expectString(STR_DEVICE_TYPE)){
+		#ifdef FULLDEBUG
+			PRINTLN("initial reset failed, starting wakeup sequence");
+		#endif
+		WakeUp();										//try to wakeup the modem and send the messages again. sometimes the modem is just not correctly woken up after a new sketch was loaded
+		#ifdef FULLDEBUG
+			PRINTLN("retrying reset");
+		#endif
+		_stream->print(STR_CMD_RESET);
+		_stream->print(CRLF);
+		return expectString(STR_DEVICE_TYPE);
+	}
+	return true;
 }
 
 bool MicrochipLoRaModem::SetLoRaWan(bool adr)
@@ -89,7 +98,14 @@ bool MicrochipLoRaModem::Start()
 	PRINT(CRLF);
 	#endif
 
-	return expectOK() && expectString(STR_ACCEPTED);
+	if(expectOK()){
+		if(expectString(STR_ACCEPTED))
+			return true;
+		else
+			PRINTLN("Join request rejected")
+	}
+	
+	return false;
 }
 
 #ifdef ENABLE_SLEEP
@@ -125,35 +141,114 @@ void MicrochipLoRaModem::WakeUp()
 }
 #endif
 
-bool MicrochipLoRaModem::Send(LoRaPacket* packet, bool ack)
+bool MicrochipLoRaModem::Send(void* packet, unsigned char size, bool ack)
 {
-	unsigned char length = packet->Write(microchipSendBuffer);
-	PRINTLN("Sending payload: ");
-	for (unsigned char i = 0; i < length; i++) {
-		printHex(microchipSendBuffer[i]);
-	}
-	PRINTLN();
-		
+	LoRaModem::Send(packet, size, ack);
 	unsigned char result;
-	if(ack == true){
-		//if (!setMacParam(STR_RETRIES, MAX_SEND_RETRIES))		// not a fatal error -just show a debug message
-		//	PRINTLN("[send] Non-fatal error: setting number of retries failed.");
-		result = macTransmit(STR_CONFIRMED, microchipSendBuffer, length) == NoError;
-	}
-	else{
-		result = macTransmit(STR_UNCONFIRMED, microchipSendBuffer, length) == NoError;
-	}
-	if(result){
-		PRINTLN("Successfully sent packet");
-	}
-	else{
-		PRINTLN("Failed to send packet");
-	}
+	if(ack == true)
+		result = macTransmit(STR_CONFIRMED, (unsigned char*)packet, size) == NoError;
+	else
+		result = macTransmit(STR_UNCONFIRMED, (unsigned char*)packet, size) == NoError;
+
+	if(result)
+		PRINTLN("Successfully sent packet")
+	else
+		PRINTLN("Failed to send packet")
 	return result;
 }
 
+//send a data packet to the server
+bool MicrochipLoRaModem::SendAsync(void* packet, unsigned char size, bool ack)
+{
+	if(LoRaModem::Send(packet, size, ack)){									//check size, copy to buffer, show hex on debug serial. If this is not ok, don't try to send.
+		sendState = SENDSTATE_TRANSMITCOMMAND;
+		if(ack == true)
+			macSendCommand(STR_CONFIRMED, (unsigned char*)packet, size);
+		else
+			macSendCommand(STR_UNCONFIRMED, (unsigned char*)packet, size);
+		sendState = SENDSTATE_EXPECTOK;
+		asyncOperationStart = millis();										//so we know when the async operation started.
+		return true;
+	}
+	sendState = SENDSTATE_DONE;
+	return false;
+}
 
-unsigned char MicrochipLoRaModem::macTransmit(const char* type, const unsigned char* payload, unsigned char size)
+//checks the status of the current send operation (if there was any).
+//if there was none or the operation is done, then true is done. 
+//the result of the send operation is returned  in the param 'sendResult'
+bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
+{
+	sendResult = false;
+	unsigned long curTime = millis();
+	if(sendState == SENDSTATE_EXPECTOK)
+	{
+		#ifdef FULLDEBUG	
+		PRINTLN("cur state: EXPECTOK")
+		#endif
+		unsigned long timeoutAt = asyncOperationStart + DEFAULT_TIMEOUT;
+		if ( (timeoutAt < asyncOperationStart && curTime > timeoutAt && curTime < asyncOperationStart) || curTime > timeoutAt){
+			PRINTLN("LoRa: timed-out waiting for a 'ok' response from modem")
+			sendState = SENDSTATE_DONE;
+			return true;
+		}
+		else
+		{
+			#ifdef FULLDEBUG	
+			PRINT(".");
+			#endif
+			char readResult = tryReadString(STR_RESULT_OK);
+			SerialUSB.print("try read string response: "); SerialUSB.println((int)readResult);
+			if (readResult == 0){
+				PRINTLN("LoRa: invalid response from modem, expected ok")
+				sendState = SENDSTATE_DONE;
+				return true;										// the operation failed (sendResult = false, it is done, return true
+			}
+			else if(readResult == 1){
+				sendState = SENDSTATE_GETRESPONSE;					//go to next stage
+				asyncOperationStart = curTime;						//new async operation has started, so new timeout	
+			}
+			else
+				return false;										//we remain in the same state, need to process again.
+		}
+	}
+	if(sendState == SENDSTATE_GETRESPONSE)								//fallthrough: if we swi
+	{
+		#ifdef FULLDEBUG	
+		PRINTLN("cur state: EXPECTGETRESPONSE")
+		#endif
+		unsigned long timeoutAt = asyncOperationStart + RECEIVE_TIMEOUT;
+		#ifdef FULLDEBUG	
+		PRINT("curTime: ") PRINTLN(curTime)
+		PRINT("async start: ") PRINTLN(asyncOperationStart)
+		PRINT("timeoutAt: ") PRINTLN(timeoutAt)
+		#endif
+		if ( (timeoutAt < asyncOperationStart && curTime > timeoutAt && curTime < asyncOperationStart) || curTime > timeoutAt)
+		{
+			PRINTLN("LoRa: timed-out waiting for a response!")
+			sendState = SENDSTATE_DONE;
+			return true;												//the operation failed, time to give up.
+		}
+		else{
+			unsigned char responseVal = macTransmitGetResponse();
+			if(responseVal != NoResponse){					//we have found a response (good or bad)
+				sendResult = responseVal == NoError;
+				sendState = SENDSTATE_DONE;
+				return true;
+			}
+			return false;															//we are not yet done: didn't find a result.
+		}
+	}
+	else if(sendState != SENDSTATE_DONE && sendState != SENDSTATE_EXPECTOK)
+	{
+		PRINTLN("LoRa internal error: unexpected state, resetting to init");
+		sendState = SENDSTATE_DONE;
+	}
+	return true;														//nothing to wait for.
+}
+
+//send command
+void MicrochipLoRaModem::macSendCommand(const char* type, const unsigned char* payload, unsigned char size)
 {
 	_stream->print(STR_CMD_MAC_TX);
 	_stream->print(type);
@@ -181,6 +276,11 @@ unsigned char MicrochipLoRaModem::macTransmit(const char* type, const unsigned c
 	#ifdef FULLDEBUG	
 	PRINT(CRLF);
 	#endif
+}
+
+unsigned char MicrochipLoRaModem::macTransmit(const char* type, const unsigned char* payload, unsigned char size)
+{
+	macSendCommand(type, payload, size);
 
 	// TODO lookup error
 	if (!expectOK())
@@ -195,42 +295,50 @@ unsigned char MicrochipLoRaModem::macTransmit(const char* type, const unsigned c
 		#ifdef FULLDEBUG	
 		PRINT(".");
 		#endif
-		if (readLn() > 0)
-		{
-			#ifdef FULLDEBUG		
-			PRINT(".(");
-			PRINT(this->inputBuffer);
-			PRINT(")");
-			#endif
-
-			if (strstr(this->inputBuffer, " ") != NULL) // to avoid double delimiter search 
-			{
-				// there is a splittable line -only case known is mac_rx
-				#ifdef FULLDEBUG				
-				PRINTLN("Splittable response found");
-				#endif
-				onMacRX();
-				return NoError; // TODO remove
-			}
-			else if (strstr(this->inputBuffer, STR_RESULT_MAC_TX_OK))
-			{
-				// done
-				#ifdef FULLDEBUG
-				PRINTLN("Received mac_tx_ok");
-				#endif
-				return NoError;
-			}
-			else
-			{
-				#ifdef FULLDEBUG
-				PRINTLN("Some other string received (error)");
-				#endif
-				return lookupMacTransmitError(this->inputBuffer);
-			}
-		}
+		unsigned char responseVal = macTransmitGetResponse();
+		if(responseVal != NoResponse)					//if we get something other then no response, then we found something, so exit.
+			return responseVal;
 	}
 	PRINTLN("Timed-out waiting for a response!");
 	return Timeout;
+}
+
+unsigned char MicrochipLoRaModem::macTransmitGetResponse()
+{
+	if (readLn() > 0)
+	{
+		#ifdef FULLDEBUG		
+		PRINT(".(");
+		PRINT(this->inputBuffer);
+		PRINT(")");
+		#endif
+
+		if (strstr(this->inputBuffer, " ") != NULL) // to avoid double delimiter search 
+		{
+			// there is a splittable line -only case known is mac_rx
+			#ifdef FULLDEBUG				
+			PRINTLN("Splittable response found");
+			#endif
+			onMacRX();
+			return NoError; // TODO remove
+		}
+		else if (strstr(this->inputBuffer, STR_RESULT_MAC_TX_OK))
+		{
+			// done
+			#ifdef FULLDEBUG
+			PRINTLN("Received mac_tx_ok");
+			#endif
+			return NoError;
+		}
+		else
+		{
+			#ifdef FULLDEBUG
+			PRINTLN("Some other string received (error)");
+			#endif
+			return lookupMacTransmitError(this->inputBuffer);
+		}
+	}
+	return NoResponse;
 }
 
 uint8_t MicrochipLoRaModem::lookupMacTransmitError(const char* error)
@@ -289,44 +397,86 @@ bool MicrochipLoRaModem::expectString(const char* str, unsigned short timeout)
 		#ifdef FULLDEBUG	
 		PRINT(".");
 		#endif
-
-		if (readLn() > 0)
-		{
-			#ifdef FULLDEBUG		
-			PRINT("(");
-			PRINT(this->inputBuffer);
-			PRINT(")");
-			#endif
-
-			// TODO make more strict?
-			if (strstr(this->inputBuffer, str) != NULL)
-			{
-				#ifdef FULLDEBUG
-				PRINTLN(" found a match!");
-				#endif
-				return true;
-			}
-			return false;
-		}
+		char readResult = tryReadString(str);
+		if (readResult == 0) return false;
+		else if(readResult == 1) return true;
 	}
-
 	return false;
+}
+
+//tries to read a string from the input, 1 time
+//return values:
+//-1: nothing on the buffer, try again next time
+//0: found something that didn't match
+//1: found something that matched.
+char MicrochipLoRaModem::tryReadString(const char* str)
+{
+	if (readLn() > 0)
+	{
+		#ifdef FULLDEBUG		
+		PRINT("(");
+		PRINT(this->inputBuffer);
+		PRINT(")");
+		#endif
+
+		// TODO make more strict?
+		if (strstr(this->inputBuffer, str) != NULL)
+		{
+			#ifdef FULLDEBUG
+			PRINTLN(" found a match!");
+			#endif
+			return 1;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+//tries to read a string from the input, until it is found or until the timeout occured. This is done async
+//return values:
+//-1: nothing on the buffer, try again next time
+//0: found something that didn't match
+//1: found something that matched.
+char expectStringAsync(const char* str, unsigned short timeout)
+{
+
 }
 
 unsigned short MicrochipLoRaModem::readLn(char* buffer, unsigned short size, unsigned short start)
 {
 	int len = _stream->readBytesUntil('\n', buffer + start, size);
 	if(len > 0)
-		this->inputBuffer[start + len - 1] = 0; // bytes until \n always end with \r, so get rid of it (-1)
+		buffer[start + len - 1] = 0; // bytes until \n always end with \r, so get rid of it (-1)
 	else
-		this->inputBuffer[start] = 0;
+		buffer[start] = 0;
 
 	return len;
 }
 
 bool MicrochipLoRaModem::expectOK()
 {
-	return expectString(STR_RESULT_OK);
+	bool res = expectString(STR_RESULT_OK);
+	if (!res)													//print an error message that describes the result for the user
+	{
+		if (strstr(this->inputBuffer, "invalid_param") != NULL)
+			PRINTLN("An invalid parameter was sent to the modem")
+		else if (strstr(this->inputBuffer, "keys_not_init") != NULL)
+			PRINTLN("The lora keys corresponding to the join mode (otaa or abp) were not properly configured")
+		else if (strstr(this->inputBuffer, "no_free_ch") != NULL)
+			PRINTLN("All LoRa channels are currently busy")
+		else if (strstr(this->inputBuffer, "silent") != NULL)
+			PRINTLN("The device is in silent Immediately mode")
+		else if (strstr(this->inputBuffer, "busy") != NULL)
+			PRINTLN("The MAC state is not in an idle state")
+		else if (strstr(this->inputBuffer, "mac_paused") != NULL)
+			PRINTLN("The MAC has been paused and not resumed back")
+		else if (strstr(this->inputBuffer, "not_joined") != NULL)
+			PRINTLN("The network is not joined")
+		else if (strstr(this->inputBuffer, "frame_counter_err_rejoin_needed") != NULL)
+			PRINTLN("The frame counter rolled over, possible rejoin required")
+		else if (strstr(this->inputBuffer, "invalid_data_len") != NULL)
+			PRINTLN("The application payload length is greater than the maximum application payload length corresponding to the current data rate")
+	}
 }
 
 // paramName should include the trailing space
@@ -418,33 +568,33 @@ bool MicrochipLoRaModem::setMacParam(const char* paramName, const char* paramVal
 	readLn();
  }
 
-void MicrochipLoRaModem::printHex(unsigned char hex)
-{
-  char hexTable[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-  PRINT(hexTable[hex /16]);
-  PRINT(hexTable[hex % 16]);
-  PRINT(' ');
-}
 
 unsigned char MicrochipLoRaModem::onMacRX()
 {
+	if(_callback != NULL){
+		// parse inputbuffer, put payload into packet buffer
+		char* token = strtok(this->inputBuffer, " ");
 
-	// parse inputbuffer, put payload into packet buffer
-	char* token = strtok(this->inputBuffer, " ");
-
-	// sanity check
-	if (strcmp(token, STR_RESULT_MAC_RX) != 0){
-		PRINTLN("no mac_rx found in result");
-		return NoResponse; // TODO create more appropriate error codes
+		// sanity check
+		if (strcmp(token, STR_RESULT_MAC_RX) != 0){
+			PRINTLN("no mac_rx found in result");
+			return NoResponse; // TODO create more appropriate error codes
+		}
+		token = strtok(NULL, " ");			// port
+		token = strtok(NULL, " "); 			//payload, until end of string 
+		
+		unsigned char buffer[(strlen(token) / 2) + 1];				//each bytes is represented by 2 chars, so /2 for the length.
+		uint16_t outputIndex = 0;
+		
+		// stop at the first string termination char, or if output buffer is over, or if payload buffer is over
+		while (outputIndex < DEFAULT_RECEIVED_PAYLOAD_BUFFER_SIZE && *token != 0 && *(token + 1) != 0) {		//token must end at 0, otherwise it's no string, cant find end.
+			buffer[outputIndex] = HEX_PAIR_TO_BYTE(*token, *(token + 1));
+			token += 2;
+			outputIndex++;
+		}
+		buffer[outputIndex] = 0;					//make certain we close it if it's a string.
+		_callback(buffer, outputIndex);
 	}
-
-	// port
-	token = strtok(NULL, " ");
-
-	// payload
-	token = strtok(NULL, " "); // until end of string
-	memcpy(this->receivedPayloadBuffer, token, strlen(token) + 1); // TODO check for buffer limit
-
 	return NoError;
 }
 

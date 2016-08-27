@@ -13,6 +13,7 @@ Original author: Jan Bogaerts (2015-2016)
 
 #include <instrumentationParamEnum.h>
 #include <LoRaPacket.h>
+#include <LoRaModem.h>
 
 #define INST_DATA_SiZE 8
 
@@ -35,11 +36,16 @@ class InstrumentationPacket: public LoRaPacket
 		
 		//get the data size of the packet
 		unsigned char GetDataSize();
+		
+		//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
+		//it in the object. Also print every value that was collected to the monitor (if any.)
+		bool BuildInstrumentation(LoRaModem& modem, Stream* monitor = NULL);
 	protected:
 		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
 		unsigned char getFrameType();
 	private:	
 		unsigned char _data[INST_DATA_SiZE];
+		void SetInstrumentationParam(Stream* monitor, instrumentationParam param, char* name, int value);
 };
 
 #endif

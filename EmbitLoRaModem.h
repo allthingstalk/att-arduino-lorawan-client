@@ -37,7 +37,7 @@ class EmbitLoRaModem: public LoRaModem
 		//start the modem , returns true if successful
 		bool Start();
 		//send a data packet to the server
-		bool Send(LoRaPacket* packet, bool ack = true);
+		bool Send(void* packet, unsigned char size, bool ack = true);
 		//process any incoming packets from the modem
 		void ProcessIncoming();
 		//extract the specified instrumentation parameter from the modem and return the value
@@ -53,7 +53,6 @@ class EmbitLoRaModem: public LoRaModem
 		//reads a packet from the modem and returns the value of the byte at the specified index position
 		unsigned char ReadPacket(unsigned char index);
 		
-		Stream *_monitor;
 		Stream* _stream;					//the stream to communicate with the lora modem.
 };
 

@@ -23,27 +23,13 @@ Original author: Jan Bogaerts (2015)
 #define SEND_MAX_RETRY 30			//the default max nr of times that 'send' functions will retry to send the same value.
 #define MIN_TIME_BETWEEN_SEND 0 //the minimum time between 2 consecutive calls to Send data.
 
-#define VERSION "1.2"
+#define VERSION "2.0"
+
+#define QUEUESIZE 5									
 
 
 /////////////////////////////////////////////////////////////
 
-#define BINARY_SENSOR ((short)1)
-#define BINARY_TILT_SENSOR ((short)2)
-#define PUSH_BUTTON ((short)3)
-#define DOOR_SENSOR ((short)4)
-#define TEMPERATURE_SENSOR ((short)5)
-#define LIGHT_SENSOR ((short)6)
-#define PIR_SENSOR ((short)7)
-#define ACCELEROMETER ((short)8)
-#define GPS ((short)9)
-#define PRESSURE_SENSOR ((short)10)
-#define HUMIDITY_SENSOR ((short)11)
-#define LOUDNESS_SENSOR ((short)12)
-#define AIR_QUALITY_SENSOR ((short)13)
-#define BATTERY_LEVEL ((short)14)
-#define INTEGER_SENSOR ((short)15)
-#define NUMBER_SENSOR ((short)16)
 
 //this class represents the ATT cloud platform.
 class ATTDevice
@@ -58,78 +44,51 @@ class ATTDevice
 		returns: true when subscribe was successful, otherwise false.*/
 		bool Connect(const uint8_t* devAddress, const uint8_t* appKey, const uint8_t*  nwksKey, bool adr = true);
 		
-		//create or update the specified asset. (call after connecting)
-		//note: after this call, the name will be in lower case, so that it can be used to compare with the topic of incomming messages.
-		//void AddAsset(short id, String name, String description, bool isActuator, String type);
 		
-		//send a bool data value to the cloud server for the sensor with the specified id.
-		//if ack = true -> request acknolodge, otherwise no acknowledge is waited for.
-		bool Send(bool value, short id, bool ack = true);
-		
-		//send an integer value to the cloud server for the sensor with the specified id.
+		//sends the specified payload to the NSP. If required, the data is buffered until it can be sent
+		//the buffer has a maximum size, upon overrun, newly added messages are not added and false is returned.
 		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool Send(short value, short id, bool ack = true);
+		//returns true when the packet has been buffered, or the transmission has begun. Use processQueue to get the result.
+		bool Send(void* data, unsigned char size, bool ack = true);
 		
-		//send a string data value to the cloud server for the sensor with the specified id.
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool Send(String value, short id, bool ack = true);
+		//instructs the manager to try and send a message from it's queue (if there are any) if the modem is ready with the transmission 
+		//of the previous message and there has been sufficient time between transmissions.
+		//returns :
+		//0: no more items on to process, all is done
+		//1: still items to be processed, call this function again.
+		//-1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system will try to resend the payload.
+		int ProcessQueue();
+		//calls processQueue if needed (if sendState != 0) and leaves the item on the queue if the send failed, so that it wil be retried next time.
+		//for return values, see ProcessQueue
+		int ProcessQueueRetryFailed(int sendState);
+		//calls processQueue if needed (if sendState != 0) and removes the item from the queue if the send failed.
+		//for return values, see ProcessQueue
+		int ProcessQueuePopFailed(int sendState);
 		
-		//send a gloat data value to the cloud server for the sensor with the specified id.
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool Send(float value, short id, bool ack = true);
-		
-		//sends the previously built complex data packet to the cloud for the sensor with the specified
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool Send(short id, bool ack = true);
-		
-		//sends the previously built Lora packet to the cloud. This can be a regulat packet, instrumentation packet,...
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool Send(LoRaPacket* data, bool ack = true);
-		
-		//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and sends it over
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		bool SendInstrumentation(bool ack = true);
-		
-		//loads a bool data value into the data packet that is being prepared to send to the
-		//cloud server.
-		//the packet is sent after calling Send(id_of_sensor)
-		void Queue(bool value);
-		
-		//loads a bool data value into the data packet that is being prepared to send to the
-		//cloud server.
-		//the packet is sent after calling Send(id_of_sensor)
-		void Queue(short value);
-		
-		//loads a string data value into the data packet that is being prepared to send to the
-		//cloud server.
-		//the packet is sent after calling Send(id_of_sensor)
-		void Queue(String value);
-		
-		//loads a float data value into the data packet tha is being prepared to send to the
-		//cloud server.
-		//the packet is sent after calling Send(id_of_sensor)
-		void Queue(float value);
-	
-		//check for any new mqtt messages.
-		void Process();
-		
-		
-		//set the minimum amount of time between 2 consecutive messages that are sent to the cloud.
-		//default value: 0 seconds.
-		//minTimeBetweenSend: the nr of milli seconds that should be between 2 data packets.
-		void SetMinTimeBetweenSend(short minTimeBetweenSend) { _minTimeBetweenSend = minTimeBetweenSend; };
+		//remove the current front from the list, if there is still one
+		void Pop();
 		
 	private:	
+	    unsigned long _minTimeBetweenSend;
+		unsigned long _lastTimeSent;							//the last time that a message was sent, so we can block sending if user calls send to quickly
 		Stream *_monitor;
-		//builds the content that has to be sent to the cloud using mqtt (either a csv value or a json string)
-		DataPacket _data;
 		LoRaModem* _modem;
-		short _minTimeBetweenSend;
-		unsigned long _lastTimeSent;					//the last time that a message was sent, so we can block sending if user calls send to quickly
+		unsigned char _queue[QUEUESIZE][MAX_PAYLOAD_SIZE + 2];	//buffers the data 1 extra byte in the payload for the ack request flag (at end of array -> last byte) + 1 extra byte for the size, next to last byte
+		char _front;
+		char _back;
 		
 		//store the param in the  data packet, and print to serial.
 		void SetInstrumentationParam(InstrumentationPacket* data, instrumentationParam param, char* name, int value);
 		
+		void Push(void* data, unsigned char size, bool ack = true);
+		
+		//send packet to modem for transmission
+		void StartSend(void* packet, unsigned char size, bool ack);
+		inline bool IsQueueEmpty() { return _front == _back; };
+		inline bool IsQueueFull() { return _front - 1 == _back  || (_front == 0 && _back == QUEUESIZE - 1); };
+		//sends the payload at the front of the queue, if there is any and if it's within the allowed time frame.
+		//returns true if there is still more work to be done. False if there was no more front to be sent
+		bool trySendFront();
 };
 
 #endif

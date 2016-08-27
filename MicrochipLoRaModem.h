@@ -17,10 +17,10 @@ Original author: Jan Bogaerts (2015)
   #include "WProgram.h"
 #endif
 
-#define DEFAULT_PAYLOAD_SIZE 52
+#define DEFAULT_PAYLOAD_SIZE MAX_PAYLOAD_SIZE
 #define PORT 1
-#define DEFAULT_INPUT_BUFFER_SIZE 96
-#define DEFAULT_RECEIVED_PAYLOAD_BUFFER_SIZE 64
+#define DEFAULT_INPUT_BUFFER_SIZE 440				//needs to be big enough to store 220 hex byte values.
+#define DEFAULT_RECEIVED_PAYLOAD_BUFFER_SIZE MAX_PAYLOAD_SIZE
 #define DEFAULT_TIMEOUT 120
 #define RECEIVE_TIMEOUT 60000
 #define MAX_SEND_RETRIES 10
@@ -28,13 +28,13 @@ Original author: Jan Bogaerts (2015)
 
 #if defined(ARDUINO_ARCH_AVR)
 typedef HardwareSerial SerialType;
-#define ENABLE_SLEEP
 #elif defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
 typedef Uart SerialType;
-#define ENABLE_SLEEP
 #else
 typedef Stream SerialType;
 #endif
+
+#define ENABLE_SLEEP
 
 enum MacTransmitErrorCodes
 {
@@ -49,7 +49,7 @@ class MicrochipLoRaModem: public LoRaModem
 {
 	public:
 		//create the object
-		MicrochipLoRaModem(SerialType* stream, Stream* monitor = NULL);
+		MicrochipLoRaModem(SerialType* stream, Stream* monitor = NULL, ATT_CALLBACK_SIGNATURE = NULL);
 		// Returns the required baudrate for the device
 		unsigned int getDefaultBaudRate();
 		//stop the modem.
@@ -69,7 +69,17 @@ class MicrochipLoRaModem: public LoRaModem
 		//start the modem , returns true if successful
 		bool Start();
 		//send a data packet to the server
-		bool Send(LoRaPacket* packet, bool ack = true);
+		bool Send(void* packet, unsigned char size, bool ack = true);
+		
+		//send a data packet to the server
+		//returns true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
+		bool SendAsync(void* packet, unsigned char size, bool ack = true);
+		
+		//checks the status of the current send operation (if there was any).
+		//if there was none or the operation is done, then true is done. 
+		//the result of the send operation is returned  in the param 'sendResult'
+		bool CheckSendState(bool& sendResult);
+		
 		//process any incoming packets from the modem
 		void ProcessIncoming();
 		//extract the specified instrumentation parameter from the modem and return the value
@@ -85,28 +95,38 @@ class MicrochipLoRaModem: public LoRaModem
 		void WakeUp();
 		#endif
 	private:
-		Stream *_monitor;
 		SerialType* _stream;					//the stream to communicate with the lora modem.
 		char inputBuffer[DEFAULT_INPUT_BUFFER_SIZE + 1];
-	    char receivedPayloadBuffer[DEFAULT_RECEIVED_PAYLOAD_BUFFER_SIZE + 1];
+		//stores the starting time of the current async operation
+		unsigned long asyncOperationStart;
+		
 		unsigned char lookupMacTransmitError(const char* error);
 		unsigned char onMacRX();
-		void printHex(unsigned char hex);
 		unsigned short readLn(char* buf, unsigned short bufferSize, unsigned short start = 0);
 		unsigned short readLn() { return readLn(this->inputBuffer, DEFAULT_INPUT_BUFFER_SIZE); };
 		bool expectOK();
+		//block until the string is found on input or timeout occured.
 		bool expectString(const char* str, unsigned short timeout = DEFAULT_TIMEOUT);
+		//try to read the string on the input 1 time.
+		char tryReadString(const char* str);
+		//try to read the string from teh input until found or untill timeout, do this async, so call many times
+		char expectStringAsync(const char* str, unsigned short timeout);
 		
 		bool setMacParam(const char* paramName, const unsigned char* paramValue, unsigned short size);
 		bool setMacParam(const char* paramName, unsigned char paramValue);
 		bool setMacParam(const char* paramName, const char* paramValue);
+		//send and wait for response
 		unsigned char macTransmit(const char* type, const unsigned char* payload, unsigned char size);
+		//send command
+		void macSendCommand(const char* type, const unsigned char* payload, unsigned char size);
 		//convert the text value for spreading factor into a number between 0 and 6
 		int sfToIndex(char* value);
 		//retrieves the specified parameter from the radio
 		char* getRadioParam(const char* paramName, unsigned short timeout = DEFAULT_TIMEOUT);
 		//retrieves the specified parameter from the radio
 		char* getMacParam(const char* paramName, unsigned short timeout = DEFAULT_TIMEOUT);
+		
+		unsigned char macTransmitGetResponse();
 };
 
 #endif
