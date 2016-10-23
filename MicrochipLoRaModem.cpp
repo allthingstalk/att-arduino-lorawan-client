@@ -22,6 +22,7 @@ typedef struct StringEnumPair
 MicrochipLoRaModem::MicrochipLoRaModem(SerialType* stream, Stream *monitor, ATT_CALLBACK_SIGNATURE): LoRaModem(monitor, callback)
 {
 	_stream = stream;
+	_monitor = monitor;
 }
 
 bool MicrochipLoRaModem::Stop()

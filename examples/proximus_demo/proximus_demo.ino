@@ -75,9 +75,5 @@ void send()
    
 }
 
-void serialEvent1()
-{
-  Device.Process();														// for future use of actuators
-}
 
 

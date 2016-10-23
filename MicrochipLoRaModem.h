@@ -95,6 +95,7 @@ class MicrochipLoRaModem: public LoRaModem
 		void WakeUp();
 		#endif
 	private:
+		Stream *_monitor;
 		SerialType* _stream;					//the stream to communicate with the lora modem.
 		char inputBuffer[DEFAULT_INPUT_BUFFER_SIZE + 1];
 		//stores the starting time of the current async operation
