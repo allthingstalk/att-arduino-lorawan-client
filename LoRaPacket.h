@@ -1,5 +1,5 @@
 /*
-AllThingsTalk - AllThingsTalk.io Arduino library 
+AllThingsTalk - AllThingsTalk Arduino library 
 
    Copyright 2015-2016 AllThingsTalk
 

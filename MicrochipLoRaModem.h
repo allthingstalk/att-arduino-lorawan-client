@@ -1,5 +1,5 @@
 /*
-AllThingsTalk - AllThingsTalk.io Communicate with Embit lora modems through binary AT commands
+AllThingsTalk - AllThingsTalk Communicate with Embit lora modems through binary AT commands
 
    Copyright 2015-2016 AllThingsTalk
 
