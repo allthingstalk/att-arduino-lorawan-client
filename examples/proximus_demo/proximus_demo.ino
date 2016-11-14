@@ -26,7 +26,7 @@
  *  - Embit LoRa modem EMB-LR1272
  *  
  *  For more information, please check our documentation
- *  -> http://docs.AllThingsTalk.io/kits/lora
+ *  -> http://allthingstalk.com/docs/tutorials/lora/setup
  *  
  **/
 
