@@ -38,17 +38,18 @@ Original author: Jan Bogaerts (2015-2016)
 #define NUMBER_SENSOR ((short)16)
 
 #include <Stream.h>
+#include <ATT_IOT_LoRaWAN.h>
 
 //this class represents the ATT cloud platform.
 class LoRaPacket
 {
 	public:
 		//create the object
-		LoRaPacket();
+		//device: the device that this packet will transmit data through.
+		LoRaPacket(ATTDevice &device);
 		
-		//writes the packet content to the specified byte array. This must be max 51 to 220 bytes long, depending on spreading factor.
-		//returns: the nr of bytes actually written to the array.
-		virtual unsigned char Write(unsigned char* result);
+	protected:
+		ATTDevice* _device;
 		
 		//assigns the asset/container id to the packet
 		void SetId(unsigned char id);
@@ -59,7 +60,11 @@ class LoRaPacket
 		
 		//get the data size of the packet
 		virtual unsigned char GetDataSize() = 0;
-	protected:
+	
+		//writes the packet content to the specified byte array. This must be max 51 to 220 bytes long, depending on spreading factor.
+		//returns: the nr of bytes actually written to the array.
+		virtual unsigned char Write(unsigned char* result);
+		
 		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
 		virtual unsigned char getFrameType();
 		//calculate the checksum of the packet and return it.

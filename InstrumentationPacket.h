@@ -33,7 +33,22 @@ class InstrumentationPacket: public LoRaPacket
 {
 	public:
 		//create the object
-		InstrumentationPacket();
+		InstrumentationPacket(ATTDevice &device, Stream* monitor = NULL);
+		
+		//Build the instrumentation and send it to the cloud.
+		//if ack = true -> request acknolodge, otherwise no acknowledge is waited for.
+		bool Send(bool ack = true);
+		
+		
+		//get the data size of the packet
+		unsigned char GetDataSize();
+		
+		//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
+		//it in the object. Also print every value that was collected to the monitor (if any.)
+		bool BuildInstrumentation(LoRaModem& modem);
+	protected:
+		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
+		unsigned char getFrameType();
 		
 		//writes the packet content to the specified byte array. This must be at least 51 bytes long.
 		//returns: the nr of bytes actually written to the array.
@@ -43,20 +58,11 @@ class InstrumentationPacket: public LoRaPacket
 		//resets the content of the packet back to 0 ->> all data will be removed
 		void Reset();
 		
-		bool SetParam(instrumentationParam param, int value); 
-		
-		//get the data size of the packet
-		unsigned char GetDataSize();
-		
-		//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
-		//it in the object. Also print every value that was collected to the monitor (if any.)
-		bool BuildInstrumentation(LoRaModem& modem, Stream* monitor = NULL);
-	protected:
-		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
-		unsigned char getFrameType();
 	private:	
 		unsigned char _data[INST_DATA_SiZE];
-		void SetInstrumentationParam(Stream* monitor, instrumentationParam param, char* name, int value);
+		Stream* _monitor;
+		void SetInstrumentationParam(instrumentationParam param, char* name, int value);
+		bool SetParam(instrumentationParam param, int value); 
 };
 
 #endif

@@ -95,19 +95,17 @@ int ATTDevice::ProcessQueue()
 	return 1;																	//there is still work to be done: modem is not free and still working on something.
 }
 
-int ATTDevice::ProcessQueuePopFailed(int sendState)
+int ATTDevice::ProcessQueuePopFailed()
 {
-	if(sendState != 0){
-		sendState = ProcessQueue();
-		if(sendState == -1){
-			PRINTLN("send failed")
-			Pop();                        //remove problem message.
-		}
+	int sendState = ProcessQueue();
+	if(sendState == -1){
+		PRINTLN("send failed, removing value from queue")
+		Pop();                        //remove problem message.
 	}
 	return sendState;
 }
 
-int ATTDevice::ProcessQueueRetryFailed(int sendState)
+/*int ATTDevice::ProcessQueueRetryFailed(int sendState)
 {
 	if(sendState != 0){
 		sendState = ProcessQueue();
@@ -115,7 +113,7 @@ int ATTDevice::ProcessQueueRetryFailed(int sendState)
 			PRINTLN("send failed, retrying next time")
 	}
 	return sendState;
-}
+}*/
 
 bool ATTDevice::Send(void* packet, unsigned char size, bool ack)
 {

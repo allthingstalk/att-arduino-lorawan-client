@@ -13,14 +13,14 @@
 */
 
 
-#include "DataPacket.h"
+#include "Container.h"
 
 //create the object
-DataPacket::DataPacket()
+Container::Container(ATTDevice &device):LoRaPacket(device)
 {
 }
 
-unsigned char DataPacket::Write(unsigned char* result)
+unsigned char Container::Write(unsigned char* result)
 {
 	unsigned char curPos =  LoRaPacket::Write(result);
 	
@@ -63,9 +63,19 @@ unsigned char DataPacket::Write(unsigned char* result)
 	return curPos;
 }
 
+bool Container::Send(bool value, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(value);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
 
-
-bool DataPacket::Add(bool value)
+bool Container::Add(bool value)
 {
 	if(nrBools >= 8)
 		return false;
@@ -77,7 +87,19 @@ bool DataPacket::Add(bool value)
 	return true;
 }
 
-bool DataPacket::Add(short value)
+bool Container::Send(short value, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(value);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
+bool Container::Add(short value)
 {
 	if(nrInts >= 16)
 		return false;
@@ -85,7 +107,19 @@ bool DataPacket::Add(short value)
 	return true;
 }
 
-bool DataPacket::Add(String value)
+bool Container::Send(String value, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(value);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
+bool Container::Add(String value)
 {
 	int len = value.length();
 	if(stringPos + len >= 48)
@@ -95,7 +129,35 @@ bool DataPacket::Add(String value)
 	return true;
 }
 
-bool DataPacket::Add(float value)
+bool Container::Send(float value, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(value);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
+//send data value to the cloud server for the sensor with the specified id. (x, y, z values)
+//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
+bool Container::Send(float x, float y, float z, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(x);
+	Add(y);
+	Add(z);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
+bool Container::Add(float value)
 {
 	if(nrFloats >= 16)
 		return false;
@@ -103,7 +165,7 @@ bool DataPacket::Add(float value)
 	return true;
 }
 
-void DataPacket::Reset()
+void Container::Reset()
 {
 	stringPos = 0;
 	nrFloats = 0;
@@ -112,7 +174,7 @@ void DataPacket::Reset()
 	boolValues = 0;
 }
 
-unsigned char DataPacket::GetDataSize() {
+unsigned char Container::GetDataSize() {
 	unsigned char cnt = 6;	// LoRaPacket header size;
 
 	if (nrInts > 0) {

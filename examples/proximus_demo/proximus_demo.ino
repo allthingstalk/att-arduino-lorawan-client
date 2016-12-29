@@ -34,20 +34,18 @@
 #include <ATT_IOT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include "DataPacket.h"
+#include "Container.h"
 
 #define SERIAL_BAUD 57600
 
 int DigitalSensor = 20;                                        // digital sensor is connected to pin D20/21
 MicrochipLoRaModem Modem(&Serial1, &SerialUSB);
 ATTDevice Device(&Modem, &SerialUSB);
-DataPacket payload;
+Container payload(Device);
 
 
 void setup() 
-{
-	payload.SetId(LOUDNESS_SENSOR);
-	
+{	
   //pinMode(DigitalSensor, INPUT);					            // initialize the digital pin as an input.          
   digitalWrite(ENABLE_PIN_IO, HIGH);
   delay(3000);
@@ -67,27 +65,15 @@ int sendState = 1;
 void loop() 
 {
 	if (sendNextAt < millis()){
-		send();
-   value++;
+		payload.Send(value, LOUDNESS_SENSOR);
+		value++;
 		sendNextAt = millis() + 15000;
-  }
-	sendState = Device.ProcessQueuePopFailed(sendState);
-	delay(100);
+	}
+	Device.ProcessQueuePopFailed();
+	//delay(100);
 }
 
-void send()
-{
-	unsigned char buffer[220];
-	payload.Reset();
-	payload.Add(value);
-	unsigned char length = payload.Write(buffer);
-	bool sendSuccess = Device.Send(buffer, length);
-	
-	if(sendSuccess == true){
-      sendState = 1;
-   }
-   
-}
+
 
 
 

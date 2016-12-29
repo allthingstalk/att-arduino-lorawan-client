@@ -16,8 +16,9 @@
 #include "LoRaPacket.h"
 
 //create the object
-LoRaPacket::LoRaPacket()
+LoRaPacket::LoRaPacket(ATTDevice &device)
 {
+	_device = &device;
 }
 
 unsigned char LoRaPacket::Write(unsigned char* result)

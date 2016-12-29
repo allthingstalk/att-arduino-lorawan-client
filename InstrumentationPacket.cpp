@@ -13,11 +13,11 @@
 */
 
 #include <InstrumentationPacket.h>
-#define PRINTLN(...) {if(monitor) monitor->println(__VA_ARGS__); }
-#define PRINT(...) {if(monitor) monitor->print(__VA_ARGS__); }
+#define PRINTLN(...) {if(_monitor) _monitor->println(__VA_ARGS__); }
+#define PRINT(...) {if(_monitor) _monitor->print(__VA_ARGS__); }
 
 //create the object
-InstrumentationPacket::InstrumentationPacket()
+InstrumentationPacket::InstrumentationPacket(ATTDevice &device, Stream* monitor): LoRaPacket(device), _monitor(monitor)
 {
 	SetId(0x11);
 }
@@ -100,26 +100,26 @@ unsigned char InstrumentationPacket::GetDataSize() {
 
 //collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
 //it in the object. Also print every value that was collected to the monitor (if any.)
-bool InstrumentationPacket::BuildInstrumentation(LoRaModem& modem, Stream* monitor)
+bool InstrumentationPacket::BuildInstrumentation(LoRaModem& modem)
 {
 	PRINTLN("instrumentation values:");
-	SetInstrumentationParam(monitor, MODEM, "modem", modem.GetModemId());
-	SetInstrumentationParam(monitor, DATA_RATE, "data rate", modem.GetParam(DATA_RATE));
-	SetInstrumentationParam(monitor, FREQUENCYBAND, "frequency band", modem.GetParam(FREQUENCYBAND));
-	SetInstrumentationParam(monitor, POWER_INDEX, "power index", modem.GetParam(POWER_INDEX));
-	SetInstrumentationParam(monitor, ADR, "ADR", modem.GetParam(ADR));
-	SetInstrumentationParam(monitor, DUTY_CYCLE, "duty cycle", modem.GetParam(DUTY_CYCLE));
-	SetInstrumentationParam(monitor, GATEWAY_COUNT, "nr of gateways", modem.GetParam(GATEWAY_COUNT));
-	SetInstrumentationParam(monitor, SNR, "SNR", modem.GetParam(SNR));
-	SetInstrumentationParam(monitor, SP_FACTOR, "spreading factor", modem.GetParam(SP_FACTOR));
-	SetInstrumentationParam(monitor, BANDWIDTH, "bandwidth", modem.GetParam(BANDWIDTH));
-	SetInstrumentationParam(monitor, CODING_RATE, "coding rate", modem.GetParam(CODING_RATE));
-	SetInstrumentationParam(monitor, RETRANSMISSION_COUNT, "retransmission count", modem.GetParam(RETRANSMISSION_COUNT));
+	SetInstrumentationParam(MODEM, "modem", modem.GetModemId());
+	SetInstrumentationParam(DATA_RATE, "data rate", modem.GetParam(DATA_RATE));
+	SetInstrumentationParam(FREQUENCYBAND, "frequency band", modem.GetParam(FREQUENCYBAND));
+	SetInstrumentationParam(POWER_INDEX, "power index", modem.GetParam(POWER_INDEX));
+	SetInstrumentationParam(ADR, "ADR", modem.GetParam(ADR));
+	SetInstrumentationParam(DUTY_CYCLE, "duty cycle", modem.GetParam(DUTY_CYCLE));
+	SetInstrumentationParam(GATEWAY_COUNT, "nr of gateways", modem.GetParam(GATEWAY_COUNT));
+	SetInstrumentationParam(SNR, "SNR", modem.GetParam(SNR));
+	SetInstrumentationParam(SP_FACTOR, "spreading factor", modem.GetParam(SP_FACTOR));
+	SetInstrumentationParam(BANDWIDTH, "bandwidth", modem.GetParam(BANDWIDTH));
+	SetInstrumentationParam(CODING_RATE, "coding rate", modem.GetParam(CODING_RATE));
+	SetInstrumentationParam(RETRANSMISSION_COUNT, "retransmission count", modem.GetParam(RETRANSMISSION_COUNT));
 }
 
 
 //store the param in the  data packet, and print to serial.
-void InstrumentationPacket::SetInstrumentationParam(Stream* monitor, instrumentationParam param, char* name, int value)
+void InstrumentationPacket::SetInstrumentationParam(instrumentationParam param, char* name, int value)
 {
 	SetParam(param, value);
 	PRINT(name);

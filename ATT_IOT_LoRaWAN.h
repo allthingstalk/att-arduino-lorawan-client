@@ -24,9 +24,9 @@ Original author: Jan Bogaerts (2015)
 #include <Stream.h>
 
 #include <LoRaModem.h>
-#include <DataPacket.h>
-#include <instrumentationParamEnum.h>
-#include <InstrumentationPacket.h>
+//#include <DataPacket.h>
+//#include <instrumentationParamEnum.h>
+//#include <InstrumentationPacket.h>
 
 /////////////////////////////////////////////////////////////
 //	Configuration
@@ -51,7 +51,7 @@ class ATTDevice
 		//monitor: the stream used to write log lines to.
 		ATTDevice(LoRaModem* modem, Stream* monitor = NULL);
 		
-		/*connect with the http server (call first)
+		/*connect with the base station (call first)
 		returns: true when subscribe was successful, otherwise false.*/
 		bool Connect(const uint8_t* devAddress, const uint8_t* appKey, const uint8_t*  nwksKey, bool adr = true);
 		
@@ -69,12 +69,10 @@ class ATTDevice
 		//1: still items to be processed, call this function again.
 		//-1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system will try to resend the payload.
 		int ProcessQueue();
-		//calls processQueue if needed (if sendState != 0) and leaves the item on the queue if the send failed, so that it wil be retried next time.
-		//for return values, see ProcessQueue
-		int ProcessQueueRetryFailed(int sendState);
+		
 		//calls processQueue if needed (if sendState != 0) and removes the item from the queue if the send failed.
 		//for return values, see ProcessQueue
-		int ProcessQueuePopFailed(int sendState);
+		int ProcessQueuePopFailed();
 		
 		//remove the current front from the list, if there is still one
 		void Pop();
@@ -88,13 +86,10 @@ class ATTDevice
 		char _front;
 		char _back;
 		
-		//store the param in the  data packet, and print to serial.
-		void SetInstrumentationParam(InstrumentationPacket* data, instrumentationParam param, char* name, int value);
-		
 		void Push(void* data, unsigned char size, bool ack = true);
 		
-		//send packet to modem for transmission
-		void StartSend(void* packet, unsigned char size, bool ack);
+		//send data to modem for transmission
+		void StartSend(void* data, unsigned char size, bool ack);
 		inline bool IsQueueEmpty() { return _front == _back; };
 		inline bool IsQueueFull() { return _front - 1 == _back  || (_front == 0 && _back == QUEUESIZE - 1); };
 		//sends the payload at the front of the queue, if there is any and if it's within the allowed time frame.
