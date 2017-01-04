@@ -209,7 +209,7 @@ bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
 			PRINT(".");
 			#endif
 			char readResult = tryReadString(STR_RESULT_OK);
-			SerialUSB.print("try read string response: "); SerialUSB.println((int)readResult);
+			PRINT("try read string response: "); PRINTLN((int)readResult);
 			if (readResult == 0){
 				PRINTLN("LoRa: invalid response from modem, expected ok")
 				sendState = SENDSTATE_DONE;

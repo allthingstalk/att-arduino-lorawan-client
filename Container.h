@@ -51,6 +51,9 @@ class Container: public LoRaPacket
 		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
 		bool Send(float x, float y, float z, short id, bool ack = true);
 	
+		//send data value to the cloud server for the sensor with the specified id. (x, y, z, time values)
+		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
+		bool Send(float x, float y, float z, float time, short id, bool ack = true);
 		
 	protected:
 	

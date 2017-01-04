@@ -157,6 +157,21 @@ bool Container::Send(float x, float y, float z, short id, bool ack)
 	return _device->Send(buffer, length, ack);
 }
 
+bool Container::Send(float x, float y, float z, float time, short id, bool ack)
+{
+	unsigned char buffer[220];
+	Reset();
+	
+	SetId(id);
+	Add(x);
+	Add(y);
+	Add(z);
+	Add(time);
+	
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
 bool Container::Add(float value)
 {
 	if(nrFloats >= 16)
