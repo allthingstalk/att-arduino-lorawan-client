@@ -70,7 +70,7 @@ class ATTDevice
 		//-1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system will try to resend the payload.
 		int ProcessQueue();
 		
-		//calls processQueue if needed (if sendState != 0) and removes the item from the queue if the send failed.
+		//calls processQueue and removes the item from the queue if the send failed.
 		//for return values, see ProcessQueue
 		int ProcessQueuePopFailed();
 		

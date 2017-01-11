@@ -48,6 +48,8 @@ class LoRaPacket
 		//device: the device that this packet will transmit data through.
 		LoRaPacket(ATTDevice &device);
 		
+		ATTDevice* GetDevice() {return _device;};
+		
 	protected:
 		ATTDevice* _device;
 		
