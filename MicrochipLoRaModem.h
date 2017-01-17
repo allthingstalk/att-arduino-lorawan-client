@@ -109,6 +109,10 @@ class MicrochipLoRaModem: public LoRaModem
 		Stream *_monitor;
 		SerialType* _stream;					//the stream to communicate with the lora modem.
 		char inputBuffer[DEFAULT_INPUT_BUFFER_SIZE + 1];
+		
+		//used to make certain that we at least try to read the modem response for 'ok' 1 time before timing out.
+		bool _triedReadOk;
+		
 		//stores the starting time of the current async operation
 		unsigned long asyncOperationStart;
 		

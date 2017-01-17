@@ -93,6 +93,9 @@ class LoRaModem
 		
 		float calculateTimeOnAir(unsigned char appPayloadSize, short spreading_factor = -1);
 		
+		//get the current state of the (async) send operation.
+		char GetSendState() {return sendState;};
+		
 	protected:
 		Stream *_monitor;
 		void (*_callback)(const uint8_t*,unsigned int);

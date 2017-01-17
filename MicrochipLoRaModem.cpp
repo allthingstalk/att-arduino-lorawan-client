@@ -178,6 +178,7 @@ bool MicrochipLoRaModem::SendAsync(void* packet, unsigned char size, bool ack)
 		else
 			macSendCommand(STR_UNCONFIRMED, (unsigned char*)packet, size);
 		sendState = SENDSTATE_EXPECTOK;
+		_triedReadOk = false;												//we start looking for 'ok', we have never tried to read the response yet. This is used to make certain we try to read a response at least 1 time before timing out.			
 		asyncOperationStart = millis();										//so we know when the async operation started.
 		return true;
 	}
@@ -198,7 +199,7 @@ bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
 		PRINTLN("cur state: EXPECTOK")
 		#endif
 		unsigned long timeoutAt = asyncOperationStart + DEFAULT_TIMEOUT;
-		if ( (timeoutAt < asyncOperationStart && curTime > timeoutAt && curTime < asyncOperationStart) || curTime > timeoutAt){
+		if ( (timeoutAt < asyncOperationStart && curTime > timeoutAt && curTime < asyncOperationStart) || (curTime > timeoutAt && _triedReadOk == true )){
 			PRINTLN("LoRa: timed-out waiting for a 'ok' response from modem")
 			sendState = SENDSTATE_DONE;
 			return true;
@@ -208,6 +209,7 @@ bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
 			#ifdef FULLDEBUG	
 			PRINT(".");
 			#endif
+			_triedReadOk = true;
 			char readResult = tryReadString(STR_RESULT_OK);
 			PRINT("try read string response: "); PRINTLN((int)readResult);
 			if (readResult == 0){
@@ -217,7 +219,7 @@ bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
 			}
 			else if(readResult == 1){
 				sendState = SENDSTATE_GETRESPONSE;					//go to next stage
-				asyncOperationStart = curTime;						//new async operation has started, so new timeout	
+				asyncOperationStart = millis();						//new async operation has started, so new timeout	
 			}
 			else
 				return false;										//we remain in the same state, need to process again.
