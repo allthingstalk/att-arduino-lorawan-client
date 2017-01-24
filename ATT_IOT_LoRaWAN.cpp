@@ -138,6 +138,7 @@ bool ATTDevice::Send(void* packet, unsigned char size, bool ack)
 		}
 	}
 	else{
+		Push(packet, size, ack);			//also need to buffer it, otherwise we do a pop, which is not valid.
 		StartSend(packet, size, ack);
 		return true;
 	}
