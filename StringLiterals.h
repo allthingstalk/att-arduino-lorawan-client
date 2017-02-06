@@ -31,7 +31,8 @@
 #define STR_RESULT_INVALID_DATA_LEN "invalid_data_len"
 
 #define STR_CMD_RESET "sys reset"
-#define STR_DEVICE_TYPE "RN2483"
+#define STR_DEVICE_TYPE_EU "RN2483"
+#define STR_DEVICE_TYPE_US "RN2903"
 
 #define STR_CMD_GET_MAC "mac get "
 #define STR_CMD_GET_RADIO "radio get "

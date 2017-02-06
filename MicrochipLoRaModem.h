@@ -143,6 +143,8 @@ class MicrochipLoRaModem: public LoRaModem
 		char* getMacParam(const char* paramName, unsigned short timeout = DEFAULT_TIMEOUT);
 		
 		unsigned char macTransmitGetResponse();
+		//checks the current input string against the param. Returns true if they match.
+		char checkInputInstring(const char* str);
 };
 
 #endif

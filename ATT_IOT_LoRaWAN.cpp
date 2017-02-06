@@ -14,7 +14,7 @@
 
 #include <ATT_IOT_LoRaWAN.h>
 #include "Utils.h"
-#include <arduino.h>			//still required for the 'delay' function. use #ifdef for other platforms.
+//#include <arduino.h>			//still required for the 'delay' function. use #ifdef for other platforms.
 
 
 //create the object
@@ -23,30 +23,39 @@ ATTDevice::ATTDevice(LoRaModem* modem, Stream* monitor):  _minTimeBetweenSend(MI
 	_modem = modem;
 	 _monitor = monitor;
 	_back = _front = _lastTimeSent = 0;
+	_sendFailed = false;
 }
 
 //connect with the to the lora gateway
 bool ATTDevice::Connect(const uint8_t* devAddress, const uint8_t* appKey, const uint8_t* nwksKey, bool adr)
 {
+	_devAddress = devAddress;
+	_appKey = appKey;
+	_nwksKey = nwksKey;
+	_adr = adr;
 	PRINT("ATT lib version: "); PRINTLN(VERSION);
 	if(!_modem->Stop()){								//stop any previously running modems
 		PRINTLN("can't communicate with modem: possible hardware issues");
 		return false;
 	}
-	
-	if (!_modem->SetLoRaWan(adr)){						//switch to LoRaWan mode instead of peer to peer				
+	return internalConnect();
+}
+
+bool ATTDevice::internalConnect()
+{
+	if (!_modem->SetLoRaWan(_adr)){						//switch to LoRaWan mode instead of peer to peer				
 		PRINTLN("can't set adr: possible hardware issues?");
 		return false;
 	}
-	if(!_modem->SetDevAddress(devAddress)){
+	if(!_modem->SetDevAddress(_devAddress)){
 		PRINTLN("can't assign device address to modem: possible hardware issues?");
 		return false;
 	}
-	if(!_modem->SetAppKey(appKey)){
+	if(!_modem->SetAppKey(_appKey)){
 		PRINTLN("can't assign app session key to modem: possible hardware issues?");
 		return false;
 	}
-	if(!_modem->SetNWKSKey(nwksKey)){
+	if(!_modem->SetNWKSKey(_nwksKey)){
 		PRINTLN("can't assign network session key to modem: possible hardware issues?");
 		return false;
 	}
@@ -84,11 +93,14 @@ int ATTDevice::ProcessQueue()
 	else if(_modem->CheckSendState(sendResult) == true){
 		if(sendResult == true){													// modem succesfully sent a packet, so remove from queue.
 			PRINTLN("modem reported successfull send")
+			_sendFailed = false;
 			Pop();
 			return (int)trySendFront();
 		}
 		else{
 			PRINTLN("modem reported failed send")
+			_modem->Stop();
+			_sendFailed = true;
 			return -1;
 		}
 	}
@@ -147,14 +159,20 @@ bool ATTDevice::Send(void* packet, unsigned char size, bool ack)
 
 void ATTDevice::StartSend(void* packet, unsigned char size, bool ack)
 {
+	bool canSend = true;						//if the modem doesn't respond to the reconnect, don't try to send.
+	if(_sendFailed == true)						//restart the modem if a previous send had failed. This connects us back to the base station.
+		canSend = internalConnect();
 	// calculate BEFORE or AFTER send ??  (-> sf might change ... before would be the actual value used in send)
 	float toa = _modem->calculateTimeOnAir(size); // calculate for current settings, so BEFORE send !!
 	PRINT("TOA: ") PRINTLN(toa)
-	_modem->SendAsync(packet, size, ack);
+	if(canSend)
+		_modem->SendAsync(packet, size, ack);
 	_lastTimeSent = millis();
-	toa = toa * 100;
-	_minTimeBetweenSend = ceil(toa);			//dynamically adjust
-	PRINT("min time between send: ") PRINTLN(_minTimeBetweenSend)
+	unsigned long minTime = ceil(toa * 100);			//dynamically adjust
+	PRINT("min delay until next send: ") PRINT(minTime) PRINTLN(" ms")
+	_minTimeBetweenSend = minTime;
+	
+	
 }
 
 

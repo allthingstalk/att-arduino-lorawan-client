@@ -43,8 +43,8 @@ bool MicrochipLoRaModem::Stop()
 
 	_stream->print(STR_CMD_RESET);
 	_stream->print(CRLF);
-
-	if(!expectString(STR_DEVICE_TYPE)){
+	bool result = true;
+	if(!expectString(STR_DEVICE_TYPE_EU) && !checkInputInstring(STR_DEVICE_TYPE_US)){
 		#ifdef FULLDEBUG
 			PRINTLN("initial reset failed, starting wakeup sequence");
 		#endif
@@ -54,9 +54,30 @@ bool MicrochipLoRaModem::Stop()
 		#endif
 		_stream->print(STR_CMD_RESET);
 		_stream->print(CRLF);
-		return expectString(STR_DEVICE_TYPE);
+		result = expectString(STR_DEVICE_TYPE_EU) || checkInputInstring(STR_DEVICE_TYPE_US);
 	}
-	return true;
+	if(result){
+		PRINT("modem type: "); 
+		if (strstr(this->inputBuffer, STR_DEVICE_TYPE_EU) != NULL){
+			PRINTLN(STR_DEVICE_TYPE_EU);
+	    }
+		else if (strstr(this->inputBuffer, STR_DEVICE_TYPE_US) != NULL){
+			PRINTLN(STR_DEVICE_TYPE_US);
+		}
+	}
+	return result;
+}
+
+char MicrochipLoRaModem::checkInputInstring(const char* str)
+{
+	if (strstr(this->inputBuffer, str) != NULL)
+	{
+		#ifdef FULLDEBUG
+		PRINTLN(" found a match!");
+		#endif
+		return 1;
+	}
+	return 0;
 }
 
 bool MicrochipLoRaModem::SetLoRaWan(bool adr)
@@ -211,7 +232,9 @@ bool MicrochipLoRaModem::CheckSendState(bool& sendResult)
 			#endif
 			_triedReadOk = true;
 			char readResult = tryReadString(STR_RESULT_OK);
+			#ifdef FULLDEBUG
 			PRINT("try read string response: "); PRINTLN((int)readResult);
+			#endif
 			if (readResult == 0){
 				PRINTLN("LoRa: invalid response from modem, expected ok")
 				sendState = SENDSTATE_DONE;
@@ -433,14 +456,7 @@ char MicrochipLoRaModem::tryReadString(const char* str)
 		#endif
 
 		// TODO make more strict?
-		if (strstr(this->inputBuffer, str) != NULL)
-		{
-			#ifdef FULLDEBUG
-			PRINTLN(" found a match!");
-			#endif
-			return 1;
-		}
-		return 0;
+		return checkInputInstring(str);
 	}
 	return -1;
 }
