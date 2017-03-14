@@ -13,7 +13,7 @@ AllThingsTalk - AllThingsTalk Arduino library
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
-Original author: Jan Bogaerts (2015-2016)
+Original author: Jan Bogaerts (2015-2017)
 */
 
 #ifndef LoRaPacket_h
@@ -44,10 +44,15 @@ Original author: Jan Bogaerts (2015-2016)
 class LoRaPacket
 {
 	public:
-		//create the object
-		//device: the device that this packet will transmit data through.
+		/**create the object
+		
+		parameters:
+		- device: the device that this packet will transmit data through.
+		*/
 		LoRaPacket(ATTDevice &device);
 		
+		/**get a reference to the device object.
+		*/
 		ATTDevice* GetDevice() {return _device;};
 		
 	protected:

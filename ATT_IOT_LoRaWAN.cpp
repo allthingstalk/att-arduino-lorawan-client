@@ -18,7 +18,9 @@
 
 
 //create the object
-ATTDevice::ATTDevice(LoRaModem* modem, Stream* monitor):  _minTimeBetweenSend(MIN_TIME_BETWEEN_SEND)
+ATTDevice::ATTDevice(LoRaModem* modem, Stream* monitor, bool autoCalMinTime, unsigned int minTime):  _minTimeBetweenSend(minTime), 
+																									 _autoCalMinTime(autoCalMinTime), 
+																									 _minAllowedTimeBetweenSend(minTime)
 {
 	_modem = modem;
 	 _monitor = monitor;
@@ -159,18 +161,20 @@ bool ATTDevice::Send(void* packet, unsigned char size, bool ack)
 
 void ATTDevice::StartSend(void* packet, unsigned char size, bool ack)
 {
+	float toa = _modem->calculateTimeOnAir(size); // calculate for current settings, so BEFORE send !! -> do before checking if the previous send has failed, this way, we don't loose speed after dropping the connection (otherwise delay goes back to 130 sec, which is not required).
 	bool canSend = true;						//if the modem doesn't respond to the reconnect, don't try to send.
 	if(_sendFailed == true)						//restart the modem if a previous send had failed. This connects us back to the base station.
 		canSend = internalConnect();
 	// calculate BEFORE or AFTER send ??  (-> sf might change ... before would be the actual value used in send)
-	float toa = _modem->calculateTimeOnAir(size); // calculate for current settings, so BEFORE send !!
-	PRINT("TOA: ") PRINTLN(toa)
-	if(canSend)
+	if(canSend){
+		PRINT("TOA: ") PRINTLN(toa)
 		_modem->SendAsync(packet, size, ack);
-	_lastTimeSent = millis();
-	unsigned long minTime = ceil(toa * 100);			//dynamically adjust
-	PRINT("min delay until next send: ") PRINT(minTime) PRINTLN(" ms")
-	_minTimeBetweenSend = minTime;
+		_lastTimeSent = millis();
+		unsigned long minTime = ceil(toa * 100);			//dynamically adjust
+		if(_autoCalMinTime)
+			_minTimeBetweenSend = minTime > _minAllowedTimeBetweenSend ? minTime : _minAllowedTimeBetweenSend;
+		PRINT("min delay until next send: ") PRINT(_minTimeBetweenSend) PRINTLN(" ms")
+	}
 	
 	
 }

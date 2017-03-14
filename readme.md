@@ -6,7 +6,6 @@ This is a library for the AllThingsTalk ‘Internet of Things’ platform that p
 This library has been developed for the folowing LoRa modems: 
 
 - [Microchip](http://www.microchip.com/wwwproducts/Devices.aspx?product=RN2483)
-- [Embit](http://www.embit.eu/products/wireless-modules/emb-lr1272/) (partially implemented)
 - other to come shortly
 
 ### Installation

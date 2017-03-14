@@ -13,7 +13,7 @@ AllThingsTalk - Arduino library
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
-Original author: Jan Bogaerts (2015-2016)
+Original author: Jan Bogaerts (2015-2017)
 */
 
 #ifndef InstrumentationPacket_h
@@ -32,30 +32,45 @@ Original author: Jan Bogaerts (2015-2016)
 class InstrumentationPacket: public LoRaPacket
 {
 	public:
-		//create the object
+		/** create the object
+		
+		parameters:
+		- device: the buffer object to use for transmitting data.
+		- monitor: a stream object used to write monitoring output (text) towards.
+		*/
 		InstrumentationPacket(ATTDevice &device, Stream* monitor = NULL);
 		
-		//Build the instrumentation and send it to the cloud.
-		//if ack = true -> request acknolodge, otherwise no acknowledge is waited for.
+		/** Build the instrumentation and send it to the cloud.
+		
+		parameters:
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		*/
 		bool Send(bool ack = true);
 		
 		
-		//get the data size of the packet
+		/** get the data size of the packet
+		*/
 		unsigned char GetDataSize();
 		
-		//collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
-		//it in the object. Also print every value that was collected to the monitor (if any.)
+		/** collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
+		it in the object. Also print every value that was collected to the monitor (if any.)
+		
+		parameters:
+		- modem: the lora modem object to retreive the information from.
+		
+		returns: true upon success.
+		*/
 		bool BuildInstrumentation(LoRaModem& modem);
 	protected:
-		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
+		///returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
 		unsigned char getFrameType();
 		
-		//writes the packet content to the specified byte array. This must be at least 51 bytes long.
-		//returns: the nr of bytes actually written to the array.
+		///writes the packet content to the specified byte array. This must be at least 51 bytes long.
+		///returns: the nr of bytes actually written to the array.
 		virtual unsigned char Write(unsigned char* result);
 		
 		
-		//resets the content of the packet back to 0 ->> all data will be removed
+		///resets the content of the packet back to 0 ->> all data will be removed
 		void Reset();
 		
 	private:	

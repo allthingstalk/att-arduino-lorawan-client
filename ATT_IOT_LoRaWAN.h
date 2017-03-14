@@ -13,7 +13,7 @@ AllThingsTalk - LoRa Arduino library
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
-Original author: Jan Bogaerts (2015)
+Original author: Jan Bogaerts (2015-2017)
 */
 
 #ifndef ATTDevice_h
@@ -32,7 +32,7 @@ Original author: Jan Bogaerts (2015)
 //	Configuration
 /////////////////////////////////////////////////////////////
 #define SEND_MAX_RETRY 30			//the default max nr of times that 'send' functions will retry to send the same value.
-#define MIN_TIME_BETWEEN_SEND 0 //the minimum time between 2 consecutive calls to Send data.
+#define MIN_TIME_BETWEEN_SEND 10000	//the default value for the minimum time between 2 consecutive calls to Send data. (expressed in milliseconds)
 
 #define VERSION "2.0"
 
@@ -42,51 +42,110 @@ Original author: Jan Bogaerts (2015)
 /////////////////////////////////////////////////////////////
 
 
-//this class represents the ATT cloud platform.
+/** this class provides buffered data transmission features.  
+
+The buffer (a queue) allows the application to gracefully handle situations where the lora network does
+not yet allow the device to send data or when the network connection has been temporarily lost.
+Delays between messages can be calculated automatically, based on the current transmission speed, or can be set
+by a fixed value.
+
+To use this class:
+- create an instance and 
+- call the Connect() function in order to establish a connection with the NSP. 
+- use Send() to send a data packet to the NSP at the earliest convenience. 
+- regularly call ProcessQueue() or 'ProcessQueuePopFailed' to make certain that any pending actions are processed.
+
+there are also functions available to manage the buffer:
+- Pop(): remove the first item from the queue
+- IsQueueEmpty(): check if the queue is currently empty (fast method)
+- IsQueueFull(): check if the queue is currently full
+- QueueCount(): get the current nr of elements in the queue
+*/
 class ATTDevice
 {
 	public:
-		//create the object
-		//modem: the object that respresents the modem that should be used.
-		//monitor: the stream used to write log lines to.
-		ATTDevice(LoRaModem* modem, Stream* monitor = NULL);
+		/** create the object
 		
-		/*connect with the base station (call first)
-		returns: true when subscribe was successful, otherwise false.*/
+		parameters:
+		- modem: the object that respresents the modem that should be used.
+		- monitor: the stream used to write log lines to.
+		- autoCalMinTime: when true, the minimum time between 2 consecutive messages will be calculated based on the spreading factor, otherwise the default minTime will be used.
+		- minTime: if autoCalMinTime is false, then this value indicates the fixed minimum time between 2 messages. Expressed in milli seconds. (default is 30000 millseconds).
+		           if autoCalMinTime is true, this is the minimum time that the system can't go below (important for some systems where the minimum delay can be 6 sec, but not all nsp's allow this)
+		*/
+		ATTDevice(LoRaModem* modem, Stream* monitor = NULL, bool autoCalMinTime=true, unsigned int minTime=MIN_TIME_BETWEEN_SEND);
+		
+		/** configure the modem and try to connect with the base station using ABP mode.
+		
+		parameters:
+		- devAddress: the device address, as provided by the NSP
+		- appKey: the app session key, as provided by the NSP
+		- nwksKey: the network session key, as provided by the NSP
+		- adr: when true, adaptive data rate is used (default).
+		
+		returns: true when the operation was successfully performed, otherwise false.
+		
+		Warning: even if this function returns true, this does not yet mean you are already in contact with a base station.
+		         It only means that the modem was succesfully configured with the provided parameters and an abp request has
+				 been made.
+				 The library will however automatically try to reconnect using abp mode when there was a problem with the connection.
+		*/
 		bool Connect(const uint8_t* devAddress, const uint8_t* appKey, const uint8_t*  nwksKey, bool adr = true);
 		
 		
-		//sends the specified payload to the NSP. If required, the data is buffered until it can be sent
-		//the buffer has a maximum size, upon overrun, newly added messages are not added and false is returned.
-		//if ack = true -> request acknowledge, otherwise no acknowledge is waited for.
-		//returns true when the packet has been buffered, or the transmission has begun. Use processQueue to get the result.
+		/** sends the specified payload to the NSP. 
+		
+		If required (no connection, not enoug time between 2 consecutive messages), then the data is buffered until it can be sent.
+		The buffer has a maximum size, upon overrun, new messages are discarded. It is your responsibility to handle this (remove the new data or remove data from the queue using Pop())
+		
+		parameters:
+		- data: the byte array or pointer to a structure that needs to be sent.
+		- size: the nr of bytes in the data block.
+		- ack: when true, an acknowledge is request fromo the base station (default), otherwise no acknowledge is waited for.
+		
+		returns: true when the packet has been buffered, or the transmission has begun. Use processQueue to get the result.
+		*/
 		bool Send(void* data, unsigned char size, bool ack = true);
 		
-		//instructs the manager to try and send a message from it's queue (if there are any) if the modem is ready with the transmission 
-		//of the previous message and there has been sufficient time between transmissions.
-		//returns :
-		//0: no more items on to process, all is done
-		//1: still items to be processed, call this function again.
-		//-1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system will try to resend the payload.
+		/** instructs the system to process any incomming responses from the base station and to try and send a message from it's queue,
+		if there are any and if the system is ready for transmission 
+		  
+		If the modem reports a failed transmission, then the system will keep the message in it's buffer and try to resend it in the
+		next time slot.
+		  		
+		returns :
+		- 0: no more items on to process, all is done
+		- 1: still items to be processed, call this function again.
+		- 1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system 
+		   will try to resend the payload.
+		*/
 		int ProcessQueue();
 		
-		//calls processQueue and removes the item from the queue if the send failed.
-		//for return values, see ProcessQueue
+		/** calls processQueue() and removes the item from the queue if the send failed. 
+		
+		for return values, see ProcessQueue
+		*/
 		int ProcessQueuePopFailed();
 		
-		//remove the current front from the list, if there is still one
+		/** remove the current front from the queue, if there is still data in the buffer.
+		*/
 		void Pop();
 		
-		//returns true if the queue is empty
+		/** returns true if the queue is empty
+		*/
 		inline bool IsQueueEmpty() { return _front == _back; };
-		//returns true if the queue is full
+		
+		/** returns true if the queue is full
+		*/
 		inline bool IsQueueFull() { return _front - 1 == _back  || (_front == 0 && _back == QUEUESIZE - 1); };
 		
-		//get the nr of items currently in the queue
+		/** get the nr of items currently in the queue
+		*/
 		inline unsigned char QueueCount(){ if(_back > _front) return _back - _front; else return _front - _back;};
 		
 	private:	
 	    unsigned long _minTimeBetweenSend;
+		unsigned long _minAllowedTimeBetweenSend;
 		unsigned long _lastTimeSent;							//the last time that a message was sent, so we can block sending if user calls send to quickly
 		Stream *_monitor;
 		LoRaModem* _modem;
@@ -94,6 +153,7 @@ class ATTDevice
 		char _front;
 		char _back;
 		bool _sendFailed;
+		bool _autoCalMinTime;
 		
 		const uint8_t* _devAddress;
 		const uint8_t* _appKey;

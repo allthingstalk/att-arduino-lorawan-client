@@ -13,7 +13,7 @@ AllThingsTalk - AllThingsTalk Communicate with Embit lora modems through binary 
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
-Original author: Jan Bogaerts (2015)
+Original author: Jan Bogaerts (2015-2017)
 */
 
 #ifndef EmbitLoRaModem_h
@@ -55,54 +55,142 @@ enum MacTransmitErrorCodes
 	TransmissionFailure = 3
 };
 
-//this class represents the ATT cloud platform.
+///this class represents the ATT cloud platform.
 class MicrochipLoRaModem: public LoRaModem
 {
 	public:
-		//create the object
+		/** create the modem object
+		
+		parameters:
+		- stream: the stream object to communicate with the modem over.
+		- monitor: a stream object, used to write output data towards.
+		- MQTT_CALLBACK_SIGNATURE: assign a callback function that is called when incoming data (from nsp to device) needs to be processed
+		  Null by default, so no callback will be performed.
+		*/
 		MicrochipLoRaModem(SerialType* stream, Stream* monitor = NULL, ATT_CALLBACK_SIGNATURE = NULL);
-		// Returns the required baudrate for the device
+		
+		
+		/** Returns the required baudrate for the device
+		
+		returns: an unsigned integer, representing the default baut rate.
+		*/
 		unsigned int getDefaultBaudRate();
-		//stop the modem.
+		
+		
+		/** stop the modem.
+		
+		returns: true upon success.
+		*/
 		bool Stop();
-		//set the modem in LoRaWan mode (vs private networks)
-		//adr = adaptive data rate. true= use, false = none adaptive data rate
+		
+		/** set the modem in LoRaWan mode (vs private networks)
+		
+		parameters:
+		- adr: when true, use adaptive data rate (default).
+		
+		returns: true upon success.
+		*/
 		bool SetLoRaWan(bool adr = true);
-		//assign a device address to the modem
-		//devAddress must be 4 bytes long
+		
+		/** assign a device address to the modem
+		
+		parameters:
+		- devAddress: the device address to used. Must be 4 bytes long
+		
+		returns: true upon success.
+		*/
 		bool SetDevAddress(const unsigned char* devAddress);
-		//set the app session key for the modem communication
-		//app session key must be 16 bytes long
+		
+		/** set the app session key for the modem communication
+		
+		parameters:
+		- appkey: the app session key, must be 16 bytes long
+		
+		returns: true upon success.
+		*/
 		bool SetAppKey(const unsigned char* appKey);
-		//set the network session key
-		//network session key must be 16 bytes long
+		
+		/** set the network session key
+		
+		parameters:
+		- nwksKey: the network session key, must be 16 bytes long
+		
+		returns: true upon success.
+		*/
 		bool SetNWKSKey(const unsigned char*  nwksKey);
-		//start the modem , returns true if successful
+		
+		/** start the modem
+		
+		returns: true upon success.
+		*/
 		bool Start();
-		//send a data packet to the server
+		
+		/** send a data packet to the NSP.
+		
+		This operation is performed synchronically, so if ack is requested, then the function will block untill the base station has responded
+		or the time out has expired.
+		
+		parameters:
+		- data: the byte array or pointer to a structure that needs to be sent.
+		- size: the nr of bytes in the data block.
+		- ack: when true, an acknowledge is request fromo the base station (default), otherwise no acknowledge is waited for.
+		
+		returns: true upon success.
+		*/
 		bool Send(void* packet, unsigned char size, bool ack = true);
 		
-		//send a data packet to the server
-		//returns true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
+		/** start the send process, but return before everything is done.
+		
+		This operation is performed asynchronically, so if an ack is requested, then the operatioh is not yet complete when this function
+		returns.  Consecutive ChecSendState() calls should be performed untill the operation has been completed.
+		
+		returns: true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
+		*/
 		bool SendAsync(void* packet, unsigned char size, bool ack = true);
 		
-		//checks the status of the current send operation (if there was any).
-		//if there was none or the operation is done, then true is done. 
-		//the result of the send operation is returned  in the param 'sendResult'
+		/** checks the status of the current send operation (if there was any).
+		
+		parameters:
+		- sendResult:  the result of the send operation, if there was still a pending operation.
+		 
+		 returns: if there was none or the operation is done
+		*/
 		bool CheckSendState(bool& sendResult);
 		
-		//process any incoming packets from the modem
+		/** process any incoming packets from the modem
+		*/
 		void ProcessIncoming();
-		//extract the specified instrumentation parameter from the modem and return the value
+		
+		/** extract the specified instrumentation parameter from the modem and return the value.
+		
+		You don't normally call this function yourself. Instead use the InstrumentationPacket instead, which is able to display and send
+		all relative parameter values.
+		This function is also used internally to calculated delays between consecutive send operations.
+		
+		parameters:
+		- param: the id of the parameter whose value should be returned.
+		
+		returns: the value of the specified parameter.
+		*/
 		int GetParam(instrumentationParam param);
-		//returns the id number of the modem type. See the container definition for the instrumentation container to see more details.
+		
+		
+		/**returns the id number of the modem type. See the container definition for the instrumentation container to see more details.
+		*/
 		int GetModemId();
-		//prints all configuration params (radio and mac) to the monitor
+		
+		
+		/**prints all configuration params (radio and mac) to the monitor
+		*/
 		void PrintModemConfig();
+		
 		#ifdef ENABLE_SLEEP
-		//put the modem in sleep mode for 3 days (use WakeUp if you want to send something earlier)
+		/**put the modem in sleep mode for 3 days (use WakeUp if you want to send something earlier)
+		*/
 		void Sleep();
-		//wakes up the device after it has been put the sleep.
+		
+		/**wakes up the device after it has been put the sleep.
+		*/
 		void WakeUp();
 		#endif
 	private:
@@ -110,7 +198,7 @@ class MicrochipLoRaModem: public LoRaModem
 		SerialType* _stream;					//the stream to communicate with the lora modem.
 		char inputBuffer[DEFAULT_INPUT_BUFFER_SIZE + 1];
 		
-		//used to make certain that we at least try to read the modem response for 'ok' 1 time before timing out.
+		///used to make certain that we at least try to read the modem response for 'ok' 1 time before timing out.
 		bool _triedReadOk;
 		
 		//stores the starting time of the current async operation
