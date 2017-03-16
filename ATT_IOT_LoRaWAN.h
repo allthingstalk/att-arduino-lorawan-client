@@ -57,10 +57,10 @@ To use this class:
 - regularly call ProcessQueue() or 'ProcessQueuePopFailed' to make certain that any pending actions are processed.
 
 there are also functions available to manage the buffer:
-- Pop(): remove the first item from the queue
-- IsQueueEmpty(): check if the queue is currently empty (fast method)
-- IsQueueFull(): check if the queue is currently full
-- QueueCount(): get the current nr of elements in the queue
+- `Pop()` remove the first item from the queue
+- `IsQueueEmpty()` check if the queue is currently empty (fast method)
+- `IsQueueFull()` check if the queue is currently full
+- `QueueCount()` get the current nr of elements in the queue
 */
 class ATTDevice
 {
@@ -114,10 +114,10 @@ class ATTDevice
 		If the modem reports a failed transmission, then the system will keep the message in it's buffer and try to resend it in the
 		next time slot.
 		  		
-		returns :
-		- 0: no more items on to process, all is done
-		- 1: still items to be processed, call this function again.
-		- 1: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system 
+		returns:
+		- `0`: no more items on to process, all is done
+		- `1`: still items to be processed, call this function again.
+		- `-1`: the message currently on top failed transmission: if you want to disgard it, remove it manually with pop, otherwise the system 
 		   will try to resend the payload.
 		*/
 		int ProcessQueue();
