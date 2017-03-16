@@ -35,7 +35,8 @@ Original author: Jan Bogaerts (2015-2017)
 class Container: public LoRaPacket
 {
 	public:
-		/** create the object
+		/**
+		Create the object.
 		
 		parameters:
 		- device: the buffer object to use for transmitting data.
@@ -43,66 +44,68 @@ class Container: public LoRaPacket
 		Container(ATTDevice &device);
 		
 		
-		/** send a bool data value to the cloud server for the sensor with the specified id.
+		/**
+		Send a bool data value to the cloud server for the sensor with the specified id.
 		
 		parameters:
 		- value: a boolean value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(bool value, short id, bool ack = true);
 		
-		/** send an integer value to the cloud server for the sensor with the specified id.
+		/**
+		Send an integer value to the cloud server for the sensor with the specified id.
 		
 		parameters:
 		- value: an integer value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(short value, short id, bool ack = true);
 		
-		/** send a string data value to the cloud server for the sensor with the specified id.
+		/**
+		Send a string data value to the cloud server for the sensor with the specified id.
 		
 		parameters:
 		- value: a string value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(String value, short id, bool ack = true);
 		
-		/** send a float value to the cloud server for the sensor with the specified id.
+		/**
+		Send a float value to the cloud server for the sensor with the specified id.
+		
 		parameters:
 		- value: a float (16 bit) value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(float value, short id, bool ack = true);
 		
-		/** send x, y, z data values to the cloud server for the sensor with the specified id.
+		/**
+		Send x, y, z data values to the cloud server for the sensor with the specified id.
 		
 		parameters:
 		- x: a float value, usually representing an x coordinate
 		- y: a float value, usually representing an y coordinate
 		- z: a float value, usually representing an z coordinate
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(float x, float y, float z, short id, bool ack = true);
 	
-		/** send data value to the cloud server for the sensor with the specified id. (x, y, z, time values)
+		/**
+		Send data value to the cloud server for the sensor with the specified id. (x, y, z, time values).
+		
 		parameters:
 		- x: a float value, usually representing an x coordinate
 		- y: a float value, usually representing an y coordinate
 		- z: a float value, usually representing an z coordinate
-		- time: a float value, usually representing the timestamp at which the coordinates were measured.
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) 
-		  for more info on the available containers.
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- time: a float value, usually representing the timestamp at which the coordinates were measured
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
 		*/
 		bool Send(float x, float y, float z, float time, short id, bool ack = true);
 		
