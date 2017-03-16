@@ -31,20 +31,30 @@ Original author: Jan Bogaerts (2015-2016)
 class InstrumentationPacket: public LoRaPacket
 {
 	public:
-		//create the object
+		/**
+		Create the object
+		*/
 		InstrumentationPacket();
 		
-		//writes the packet content to the specified byte array. This must be at least 51 bytes long.
-		//returns: the nr of bytes actually written to the array.
+		/**
+		Writes the packet content to the specified byte array. This must be at least 51 bytes long.
+		returns: the nr of bytes actually written to the array.
+		*/
 		virtual unsigned char Write(unsigned char* result);
 		
-		
-		//resets the content of the packet back to 0 ->> all data will be removed
+		/**
+		Resets the content of the packet back to 0 ->> all data will be removed.
+		*/
 		void Reset();
 		
+		/**
+		Set an instrumantation parameter.
+		*/
 		bool SetParam(instrumentationParam param, int value);
 	protected:
-		//returns the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
+		/**
+		returns: the frame type number for this lora packet. The default value is 0x40. Inheritors that render other packet types can overwrite this.
+		*/
 		unsigned char getFrameType();
 	private:	
 		unsigned char _data[INST_DATA_SiZE];
