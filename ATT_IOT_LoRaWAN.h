@@ -42,7 +42,8 @@ Original author: Jan Bogaerts (2015-2017)
 /////////////////////////////////////////////////////////////
 
 
-/** this class provides buffered data transmission features.  
+/**
+This class provides buffered data transmission features.  
 
 The buffer (a queue) allows the application to gracefully handle situations where the lora network does
 not yet allow the device to send data or when the network connection has been temporarily lost.
@@ -64,7 +65,8 @@ there are also functions available to manage the buffer:
 class ATTDevice
 {
 	public:
-		/** create the object
+		/**
+		Create the object
 		
 		parameters:
 		- modem: the object that respresents the modem that should be used.
@@ -75,7 +77,8 @@ class ATTDevice
 		*/
 		ATTDevice(LoRaModem* modem, Stream* monitor = NULL, bool autoCalMinTime=true, unsigned int minTime=MIN_TIME_BETWEEN_SEND);
 		
-		/** configure the modem and try to connect with the base station using ABP mode.
+		/**
+		Configure the modem and try to connect with the base station using ABP mode.
 		
 		parameters:
 		- devAddress: the device address, as provided by the NSP
@@ -85,15 +88,13 @@ class ATTDevice
 		
 		returns: true when the operation was successfully performed, otherwise false.
 		
-		Warning: even if this function returns true, this does not yet mean you are already in contact with a base station.
-		         It only means that the modem was succesfully configured with the provided parameters and an abp request has
-				 been made.
-				 The library will however automatically try to reconnect using abp mode when there was a problem with the connection.
+		> Even if this function returns true, this does not yet mean you are already in contact with a base station. It only means that the modem was succesfully configured with the provided parameters and an abp request has been made. The library will however automatically try to reconnect using abp mode when there was a problem with the connection.
 		*/
 		bool Connect(const uint8_t* devAddress, const uint8_t* appKey, const uint8_t*  nwksKey, bool adr = true);
 		
 		
-		/** sends the specified payload to the NSP. 
+		/**
+		Sends the specified payload to the NSP. 
 		
 		If required (no connection, not enoug time between 2 consecutive messages), then the data is buffered until it can be sent.
 		The buffer has a maximum size, upon overrun, new messages are discarded. It is your responsibility to handle this (remove the new data or remove data from the queue using Pop())
@@ -107,7 +108,8 @@ class ATTDevice
 		*/
 		bool Send(void* data, unsigned char size, bool ack = true);
 		
-		/** instructs the system to process any incomming responses from the base station and to try and send a message from it's queue,
+		/**
+		Instructs the system to process any incomming responses from the base station and to try and send a message from it's queue,
 		if there are any and if the system is ready for transmission 
 		  
 		If the modem reports a failed transmission, then the system will keep the message in it's buffer and try to resend it in the
@@ -121,25 +123,29 @@ class ATTDevice
 		*/
 		int ProcessQueue();
 		
-		/** calls processQueue() and removes the item from the queue if the send failed. 
-		
-		for return values, see ProcessQueue
+		/**
+		Calls processQueue() and removes the item from the queue if the send failed. 
+		For return values, see ProcessQueue
 		*/
 		int ProcessQueuePopFailed();
 		
-		/** remove the current front from the queue, if there is still data in the buffer.
+		/**
+		returns: the current front from the queue, if there is still data in the buffer.
 		*/
 		void Pop();
 		
-		/** returns true if the queue is empty
+		/**
+		returns: true if the queue is empty
 		*/
 		inline bool IsQueueEmpty() { return _front == _back; };
 		
-		/** returns true if the queue is full
+		/**
+		returns: true if the queue is full
 		*/
 		inline bool IsQueueFull() { return _front - 1 == _back  || (_front == 0 && _back == QUEUESIZE - 1); };
 		
-		/** get the nr of items currently in the queue
+		/**
+		Get the nr of items currently in the queue
 		*/
 		inline unsigned char QueueCount(){ if(_back > _front) return _back - _front; else return _front - _back;};
 		
