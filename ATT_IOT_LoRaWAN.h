@@ -72,8 +72,7 @@ class ATTDevice
 		- modem: the object that respresents the modem that should be used.
 		- monitor: the stream used to write log lines to.
 		- autoCalMinTime: when true, the minimum time between 2 consecutive messages will be calculated based on the spreading factor, otherwise the default minTime will be used.
-		- minTime: if autoCalMinTime is false, then this value indicates the fixed minimum time between 2 messages. Expressed in milli seconds. (default is 30000 millseconds).
-		           if autoCalMinTime is true, this is the minimum time that the system can't go below (important for some systems where the minimum delay can be 6 sec, but not all nsp's allow this)
+		- minTime: if `autoCalMinTime` is false, this value indicates the fixed minimum time between 2 messages. Expressed in milli seconds (default is 30000 millseconds). If `autoCalMinTime` is true, this is the minimum time that the system can't go below (important for some systems where the minimum delay can be 6 sec, but not all nsp's allow this)
 		*/
 		ATTDevice(LoRaModem* modem, Stream* monitor = NULL, bool autoCalMinTime=true, unsigned int minTime=MIN_TIME_BETWEEN_SEND);
 		
