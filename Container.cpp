@@ -189,7 +189,8 @@ void Container::Reset()
 	boolValues = 0;
 }
 
-unsigned char Container::GetDataSize() {
+unsigned char Container::GetDataSize() 
+{
 	unsigned char cnt = 6;	// LoRaPacket header size;
 
 	if (nrInts > 0) {
@@ -207,4 +208,15 @@ unsigned char Container::GetDataSize() {
 	cnt += stringPos;
 	cnt += 1; // crc
 	return cnt;
+}
+
+const uint8_t* Container::Parse(const uint8_t* data, short& id)
+{
+    id = 0;
+    if(data){
+        id = data[0];
+        data++;
+        return data;
+    }
+    return NULL;
 }

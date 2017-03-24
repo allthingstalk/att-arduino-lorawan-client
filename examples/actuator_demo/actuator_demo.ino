@@ -11,6 +11,7 @@
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 */
+
 /****
  *  AllThingsTalk Developer Cloud IoT experiment for LoRa
  *  Version 1.0 dd 09/11/2015
@@ -38,8 +39,10 @@
 
 #define SERIAL_BAUD 57600
 
+void callback(const uint8_t* data,unsigned int length);
+
 int DigitalSensor = 20;                                        // digital sensor is connected to pin D20/21
-MicrochipLoRaModem Modem(&Serial1, &SerialUSB);
+MicrochipLoRaModem Modem(&Serial1, &SerialUSB, callback);
 ATTDevice Device(&Modem, &SerialUSB);
 
 struct DemoData
@@ -63,7 +66,8 @@ void setup()
   Serial1.begin(Modem.getDefaultBaudRate());					// init the baud rate of the serial connection so that it's ok for the modem
   while((!SerialUSB) && (millis()) < 30000){}            //wait until serial bus is available, so we get the correct logging on screen. If no serial, then blocks for 2 seconds before run
   
-  while(!Device.Connect(DEV_ADDR, APPSKEY, NWKSKEY));
+  while(!Device.Connect(DEV_ADDR, APPSKEY, NWKSKEY))
+	  Modem.WakeUp();
   SerialUSB.println("Ready to send data");
 
   //Modem.PrintModemConfig();
@@ -79,18 +83,26 @@ void loop()
 	data.value2 = counter;
 	data.value3 = counter;
 	if (sendNextAt < millis()){
-		//Modem.Send(&data, sizeof(data));					//blocking
 		bool sendSuccess = Device.Send(&data, sizeof(data));				//non blocking
-    if(sendSuccess == false){
-      SerialUSB.println("discarding data");
-    }
-    else sendState = 1;                           //mke certain we try to process the queue again.
+		if(sendSuccess == false){
+		  SerialUSB.println("discarding data");
+		}
+		else 
+			sendState = 1;                           //mke certain we try to process the queue again.
 		counter++;
 		sendNextAt = millis() + 5000;
 	}
-	sendState = Device.ProcessQueue();
+	sendState = Device.ProcessQueuePopFailed(sendState);
 	delay(100);
 }
 
-
+void callback(const uint8_t* data,unsigned int length)
+{
+	SerialUSB.print("found:");
+	for(int i = 0; i < length; i++){
+		SerialUSB.print("");
+		SerialUSB.print(data[i], HEX);
+	}
+	SerialUSB.println();
+}
 

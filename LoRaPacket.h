@@ -20,23 +20,6 @@ Original author: Jan Bogaerts (2015-2017)
 #define LoRaPacket_h
 
 
-#define BINARY_SENSOR ((short)1)
-#define BINARY_TILT_SENSOR ((short)2)
-#define PUSH_BUTTON ((short)3)
-#define DOOR_SENSOR ((short)4)
-#define TEMPERATURE_SENSOR ((short)5)
-#define LIGHT_SENSOR ((short)6)
-#define PIR_SENSOR ((short)7)
-#define ACCELEROMETER ((short)8)
-#define GPS ((short)9)
-#define PRESSURE_SENSOR ((short)10)
-#define HUMIDITY_SENSOR ((short)11)
-#define LOUDNESS_SENSOR ((short)12)
-#define AIR_QUALITY_SENSOR ((short)13)
-#define BATTERY_LEVEL ((short)14)
-#define INTEGER_SENSOR ((short)15)
-#define NUMBER_SENSOR ((short)16)
-
 #include <Stream.h>
 #include <ATT_IOT_LoRaWAN.h>
 
