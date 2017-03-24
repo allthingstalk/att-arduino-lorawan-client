@@ -47,28 +47,31 @@ Original author: Jan Bogaerts (2015-2017)
 class LoRaModem
 {
 	public:
-		/** create the modem object
+		/** 
+		Create the modem object.
 		
 		parameters:
-		- monitor: a stream object, used to write output data towards.
-		- MQTT_CALLBACK_SIGNATURE: assign a callback function that is called when incoming data (from nsp to device) needs to be processed
-		  Null by default, so no callback will be performed.
+		- monitor: a stream object, used to write output data towards
+		- MQTT_CALLBACK_SIGNATURE: assign a callback function that is called when incoming data (from nsp to device) needs to be processed. Null by default, so no callback will be performed
 		*/
 		LoRaModem(Stream *monitor, ATT_CALLBACK_SIGNATURE = NULL);
 	
-		/** Returns the required baudrate for the device
+		/**
+		Returns the required baudrate for the device
 		
 		returns: an unsigned integer, representing the default baut rate.
 		*/
 		virtual unsigned int getDefaultBaudRate() = 0;
 		
-		/** stop the modem.
+		/**
+		Stop the modem.
 		
 		returns: true upon success.
 		*/
 		virtual bool Stop() = 0;
 		
-		/** set the modem in LoRaWan mode (vs private networks)
+		/** 
+		Set the modem in LoRaWan mode (versus private networks).
 		
 		parameters:
 		- adr: when true, use adaptive data rate (default).
@@ -77,7 +80,8 @@ class LoRaModem
 		*/
 		virtual bool SetLoRaWan(bool adr = true) = 0;
 		
-		/** assign a device address to the modem
+		/**
+		Assign a device address to the modem.
 		
 		parameters:
 		- devAddress: the device address to used. Must be 4 bytes long
@@ -87,7 +91,8 @@ class LoRaModem
 		virtual bool SetDevAddress(const unsigned char* devAddress) = 0;
 		
 		
-		/** set the app session key for the modem communication
+		/**
+		Set the app session key for the modem communication.
 		
 		parameters:
 		- appkey: the app session key, must be 16 bytes long
@@ -105,66 +110,70 @@ class LoRaModem
 		*/
 		virtual bool SetNWKSKey(const unsigned char*  nwksKey) = 0;
 		
-		/** start the modem
+		/**
+		Start the modem.
 		
 		returns: true upon success.
 		*/
 		virtual bool Start() = 0;
 		
-		/** send a data packet to the NSP.
+		/**
+		Send a data packet to the NSP.
 		
-		This operation is performed synchronically, so if ack is requested, then the function will block untill the base station has responded
-		or the time out has expired.
+		This operation is performed synchronically, so if ack is requested, then the function will block untill the base station has responded or the time out has expired.
 		
 		parameters:
-		- data: the byte array or pointer to a structure that needs to be sent.
-		- size: the nr of bytes in the data block.
-		- ack: when true, an acknowledge is request fromo the base station (default), otherwise no acknowledge is waited for.
+		- data: the byte array or pointer to a structure that needs to be sent
+		- size: the nr of bytes in the data block
+		- ack: when true, an acknowledge is request fromo the base station (default), otherwise no acknowledge is waited for
 		
 		returns: true upon success.
 		*/
 		virtual bool Send(void* packet, unsigned char size, bool ack = true);
 		
-		/** start the send process, but return before everything is done.
+		/**
+		Start the send process, but return before everything is done.
 		
-		This operation is performed asynchronically, so if an ack is requested, then the operatioh is not yet complete when this function
-		returns.  Consecutive ChecSendState() calls should be performed untill the operation has been completed.
+		This operation is performed asynchronically, so if an ack is requested, then the operatioh is not yet complete when this function returns.  Consecutive ChecSendState() calls should be performed untill the operation has been completed.
 		
-		returns: true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
+		returns: true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false.
 		*/
 		virtual bool SendAsync(void* packet, unsigned char size, bool ack = true) = 0;
 		
-		/** checks the status of the current send operation (if there was any).
+		/**
+		Checks the status of the current send operation (if there was any).
 		
 		parameters:
-		- sendResult:  the result of the send operation, if there was still a pending operation.
+		- sendResult:  the result of the send operation, if there was still a pending operation
 		 
-		 returns: if there was none or the operation is done
+		returns: if there was none or the operation is done
 		*/
 		virtual bool CheckSendState(bool& sendResult) = 0;
 		
-		/** returns true if the modem can send a payload. If it can't at the moment (still processing another packet), then false is returned.
+		/**
+		returns: true if the modem can send a payload. If it can't at the moment (still processing another packet), then false is returned.
 		*/
 		inline bool IsFree(){ return sendState == SENDSTATE_DONE; };
 		
-		/** process any incoming packets from the modem
+		/**
+		Process any incoming packets from the modem.
 		*/
 		virtual void ProcessIncoming() = 0;
 		
-		/** extract the specified instrumentation parameter from the modem and return the value.
+		/**
+		Extract the specified instrumentation parameter from the modem and return the value.
 		
-		You don't normally call this function yourself. Instead use the InstrumentationPacket instead, which is able to display and send
-		all relative parameter values.
-		This function is also used internally to calculated delays between consecutive send operations.
+		You don't normally call this function yourself. Instead use the InstrumentationPacket instead, which is able to display and send all relative parameter values. This function is also used internally to calculated delays between consecutive send operations.
 		
 		parameters:
-		- param: the id of the parameter whose value should be returned.
+		- param: the id of the parameter whose value should be returned
 		
 		returns: the value of the specified parameter.
 		*/
 		virtual int GetParam(instrumentationParam param) = 0;
 		
-		/**returns the id number of the modem type. See the container definition for the instrumentation container to see more details.
+		/**
+		returns: the id number of the modem type. See the container definition for the instrumentation container to see more details.
 		*/
 		virtual int GetModemId() = 0;
 		
@@ -178,7 +187,8 @@ class LoRaModem
 		int maxPayloadForSF(short spreading_factor = -1);
 		
 		
-		/**calcualte the time on air, based on the current spreading factor and payload size. 
+		/**
+		Calcualte the time on air, based on the current spreading factor and payload size.
 		
 		parameters:
 		- appPayloadSize: the size of the payload to send.
@@ -188,7 +198,8 @@ class LoRaModem
 		*/
 		float calculateTimeOnAir(unsigned char appPayloadSize, short spreading_factor = -1);
 		
-		/**get the current state of the (async) send operation.
+		/**
+		Get the current state of the (async) send operation.
 		*/
 		char GetSendState() {return sendState;};
 		

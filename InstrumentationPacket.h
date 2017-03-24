@@ -32,7 +32,8 @@ Original author: Jan Bogaerts (2015-2017)
 class InstrumentationPacket: public LoRaPacket
 {
 	public:
-		/** create the object
+		/**
+		Create the object.
 		
 		parameters:
 		- device: the buffer object to use for transmitting data.
@@ -40,7 +41,8 @@ class InstrumentationPacket: public LoRaPacket
 		*/
 		InstrumentationPacket(ATTDevice &device, Stream* monitor = NULL);
 		
-		/** Build the instrumentation and send it to the cloud.
+		/**
+		Build the instrumentation and send it to the cloud.
 		
 		parameters:
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
@@ -48,12 +50,13 @@ class InstrumentationPacket: public LoRaPacket
 		bool Send(bool ack = true);
 		
 		
-		/** get the data size of the packet
+		/**
+		Get the data size of the packet.
 		*/
 		unsigned char GetDataSize();
 		
-		/** collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store
-		it in the object. Also print every value that was collected to the monitor (if any.)
+		/**
+		Collects all the instrumentation data from the modem (RSSI, ADR, datarate,..) and store it in the object. Also print every value that was collected to the monitor (if any).
 		
 		parameters:
 		- modem: the lora modem object to retreive the information from.
