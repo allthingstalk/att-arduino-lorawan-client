@@ -208,3 +208,13 @@ unsigned char Container::GetDataSize() {
 	cnt += 1; // crc
 	return cnt;
 }
+const uint8_t* Container::Parse(const uint8_t* data, short& id)
+{
+    id = 0;
+    if(data){
+        id = data[0];
+        data++;
+        return data;
+    }
+    return NULL;
+}

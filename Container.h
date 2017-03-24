@@ -109,6 +109,18 @@ class Container: public LoRaPacket
 		*/
 		bool Send(float x, float y, float z, float time, short id, bool ack = true);
 		
+    
+    /** 
+    Extract the data and container type from a downlink message (message from cloud to device).
+    
+    parameters:
+    - data: a pointer to the data structure that contains the raw payload.
+    - id: a reference to a variable that will receive the id of the container type contained in the message.
+    
+    returns: the address to the first byte of the data stream. It is up to the client to interprete the pointer according to the data type
+             normally expected for the specified container id.
+    **/
+    const uint8_t* Parse(const uint8_t* data, short& id);
 	protected:
 	
 		///writes the packet content to the specified byte array. This must be at least 51 bytes long.
