@@ -14,7 +14,7 @@
 
 /****
  *  AllThingsTalk Developer Cloud IoT experiment for LoRa
- *  Version 1.0 dd 09/11/2015
+ *  Version 1.0 dd 22/3/2017
  *  Original author: Jan Bogaerts 2015
  *
  *  This sketch is part of the AllThingsTalk LoRa rapid development kit
@@ -23,7 +23,8 @@
  *  This example sketch is based on the Proxilmus IoT network in Belgium
  *  The sketch and libs included support the
  *  - MicroChip RN2483 LoRa module
- *  - Embit LoRa modem EMB-LR1272
+ * 
+ *  THIS SKETCH IS FOR THE SODAQ ONE BOARD
  *  
  *  For more information, please check our documentation
  *  -> http://allthingstalk.com/docs/tutorials/lora/setup
@@ -38,14 +39,15 @@
 
 #define SERIAL_BAUD 57600
 
-int DigitalSensor = 20;                                        // digital sensor is connected to pin D20/21
-MicrochipLoRaModem Modem(&Serial1, &SerialUSB);
+void callback(const uint8_t* data,unsigned int length);
+
+MicrochipLoRaModem Modem(&Serial1, &SerialUSB, callback);
 ATTDevice Device(&Modem, &SerialUSB);
 Container payload(Device);
 
 
 void setup() 
-{	
+{
   //pinMode(DigitalSensor, INPUT);					            // initialize the digital pin as an input.          
   digitalWrite(ENABLE_PIN_IO, HIGH);
   delay(3000);
@@ -54,26 +56,37 @@ void setup()
   Serial1.begin(Modem.getDefaultBaudRate());					// init the baud rate of the serial connection so that it's ok for the modem
   while((!SerialUSB) && (millis()) < 30000){}            //wait until serial bus is available, so we get the correct logging on screen. If no serial, then blocks for 2 seconds before run
   
-  while(!Device.Connect(DEV_ADDR, APPSKEY, NWKSKEY));
-  SerialUSB.println("Ready to send data");
+  while(!Device.Connect(DEV_ADDR, APPSKEY, NWKSKEY))
+	  Modem.WakeUp();
+  SerialUSB.println("Ready to receive data");
+
 }
 
-float value = 0;
-unsigned long sendNextAt = 0;
-int sendState = 1;
 
 void loop() 
 {
-	if (sendNextAt < millis()){
-		payload.Send(value, LOUDNESS_SENSOR);
-		value++;
-		sendNextAt = millis() + 15000;
-	}
 	Device.ProcessQueuePopFailed();
-	//delay(100);
 }
 
-
-
-
+void callback(const uint8_t* data,unsigned int length)
+{
+	SerialUSB.print("found:");
+	for(int i = 0; i < length; i++){
+		SerialUSB.print("");
+		SerialUSB.print(data[i], HEX);
+	}
+	SerialUSB.println();
+  
+  short id;
+  void* value = (void*)payload.Parse(data, id);
+  if(value){
+    if(id == BUZZER)
+      SerialUSB.print("value for buzzer: ");
+    else if(id == RELAY)
+      SerialUSB.print("value for relay: ");
+    else if(id == LED)
+      SerialUSB.print("value for led: "); 
+    SerialUSB.println(*(bool*)value);
+  }
+}
 
