@@ -163,7 +163,7 @@ class LoRaModem
 		/**
 		Extract the specified instrumentation parameter from the modem and return the value.
 		
-		You don't normally call this function yourself. Instead use the InstrumentationPacket instead, which is able to display and send all relative parameter values. This function is also used internally to calculated delays between consecutive send operations.
+		You don't normally call this function yourself. Instead use the InstrumentationPacket, which is able to display and send all relative parameter values. This function is also used internally to calculated delays between consecutive send operations.
 		
 		parameters:
 		- param: the id of the parameter whose value should be returned

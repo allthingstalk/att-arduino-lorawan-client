@@ -40,7 +40,8 @@ Original author: Jan Bogaerts (2015-2017)
 #include <Stream.h>
 #include <ATT_IOT_LoRaWAN.h>
 
-//this class represents the ATT cloud platform.
+/*Base class for supported data formats.
+*/
 class LoRaPacket
 {
 	public:

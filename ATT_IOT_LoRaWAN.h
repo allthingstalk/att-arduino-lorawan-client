@@ -43,12 +43,11 @@ Original author: Jan Bogaerts (2015-2017)
 
 
 /**
-This class provides buffered data transmission features.  
+This class provides buffered, asynchronous data transmission features.  
 
 The buffer (a queue) allows the application to gracefully handle situations where the lora network does
 not yet allow the device to send data or when the network connection has been temporarily lost.
-Delays between messages can be calculated automatically, based on the current transmission speed, or can be set
-by a fixed value.
+Delays between messages can be calculated automatically, based on the current transmission speed, or can be set by a fixed value.
 
 To use this class:
 - create an instance and 
@@ -71,8 +70,8 @@ class ATTDevice
 		parameters:
 		- modem: the object that respresents the modem that should be used.
 		- monitor: the stream used to write log lines to.
-		- autoCalMinTime: when true, the minimum time between 2 consecutive messages will be calculated based on the spreading factor, otherwise the default minTime will be used.
-		- minTime: if `autoCalMinTime` is false, this value indicates the fixed minimum time between 2 messages. Expressed in milli seconds (default is 30000 millseconds). If `autoCalMinTime` is true, this is the minimum time that the system can't go below (important for some systems where the minimum delay can be 6 sec, but not all nsp's allow this)
+		- autoCalMinTime: when true (default), the minimum time between 2 consecutive messages will be calculated based on the spreading factor, otherwise the default minTime will be used.
+		- minTime: if `autoCalMinTime` is false, this value indicates the fixed minimum time between 2 messages. Expressed in milli seconds (default is 10000 millseconds). If `autoCalMinTime` is true, this is the minimum time that the system can't go below (important for some systems where the minimum delay can be 6 sec, but not all nsp's allow this)
 		*/
 		ATTDevice(LoRaModem* modem, Stream* monitor = NULL, bool autoCalMinTime=true, unsigned int minTime=MIN_TIME_BETWEEN_SEND);
 		
@@ -95,7 +94,7 @@ class ATTDevice
 		/**
 		Sends the specified payload to the NSP. 
 		
-		If required (no connection, not enoug time between 2 consecutive messages), then the data is buffered until it can be sent.
+		If required (no connection, not enough time between 2 consecutive messages), then the data is buffered until it can be sent.
 		The buffer has a maximum size, upon overrun, new messages are discarded. It is your responsibility to handle this (remove the new data or remove data from the queue using Pop())
 		
 		parameters:
@@ -103,7 +102,7 @@ class ATTDevice
 		- size: the nr of bytes in the data block.
 		- ack: when true, an acknowledge is request fromo the base station (default), otherwise no acknowledge is waited for.
 		
-		returns: true when the packet has been buffered, or the transmission has begun. Use processQueue to get the result.
+		returns: true when the packet has been buffered, or the transmission has begun. Use processQueue or ProcessQueuePopFailed to get the result of the transmission.
 		*/
 		bool Send(void* data, unsigned char size, bool ack = true);
 		
@@ -111,8 +110,7 @@ class ATTDevice
 		Instructs the system to process any incomming responses from the base station and to try and send a message from it's queue,
 		if there are any and if the system is ready for transmission 
 		  
-		If the modem reports a failed transmission, then the system will keep the message in it's buffer and try to resend it in the
-		next time slot.
+		If the modem reports a failed transmission, then the system will keep the message in it's buffer and try to resend it in the next time slot.
 		  		
 		returns:
 		- `0`: no more items on to process, all is done

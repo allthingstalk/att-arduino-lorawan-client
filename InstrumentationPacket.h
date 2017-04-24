@@ -38,6 +38,7 @@ class InstrumentationPacket: public LoRaPacket
 		parameters:
 		- device: the buffer object to use for transmitting data.
 		- monitor: a stream object used to write monitoring output (text) towards.
+				   Default is NULL.
 		*/
 		InstrumentationPacket(ATTDevice &device, Stream* monitor = NULL);
 		
@@ -45,13 +46,15 @@ class InstrumentationPacket: public LoRaPacket
 		Build the instrumentation and send it to the cloud.
 		
 		parameters:
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		- ack: when true (default), acknowledgement is requested from the base station, otherwise no acknowledge is waited for.
+		
+		returns: true upon success.
 		*/
 		bool Send(bool ack = true);
 		
 		
 		/**
-		Get the data size of the packet.
+		Get the data size of the packet (nr of bytes).
 		*/
 		unsigned char GetDataSize();
 		

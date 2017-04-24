@@ -49,8 +49,10 @@ class Container: public LoRaPacket
 		
 		parameters:
 		- value: a boolean value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		
+		returns: true upon success.
 		*/
 		bool Send(bool value, short id, bool ack = true);
 		
@@ -58,9 +60,11 @@ class Container: public LoRaPacket
 		Send an integer value to the cloud server for the sensor with the specified id.
 		
 		parameters:
-		- value: an integer value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- value: an integer (short) value
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		
+		returns: true upon success.
 		*/
 		bool Send(short value, short id, bool ack = true);
 		
@@ -69,8 +73,10 @@ class Container: public LoRaPacket
 		
 		parameters:
 		- value: a string value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		
+		returns: true upon success.
 		*/
 		bool Send(String value, short id, bool ack = true);
 		
@@ -79,8 +85,10 @@ class Container: public LoRaPacket
 		
 		parameters:
 		- value: a float (16 bit) value
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		
+		returns: true upon success.
 		*/
 		bool Send(float value, short id, bool ack = true);
 		
@@ -91,8 +99,10 @@ class Container: public LoRaPacket
 		- x: a float value, usually representing an x coordinate
 		- y: a float value, usually representing an y coordinate
 		- z: a float value, usually representing an z coordinate
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
 		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		
+		returns: true upon success.
 		*/
 		bool Send(float x, float y, float z, short id, bool ack = true);
 	
@@ -104,8 +114,10 @@ class Container: public LoRaPacket
 		- y: a float value, usually representing an y coordinate
 		- z: a float value, usually representing an z coordinate
 		- time: a float value, usually representing the timestamp at which the coordinates were measured
-		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#Supported-sensors-and-actuators) for more info on the available containers
-		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for
+		- id: the container id, see [here](http://docs.allthingstalk.com/developers/libraries/lora/#supported-sensors-and-actuators) for more info on the available containers
+		- ack: when true, acknowledgement is requested from the base station, otherwise no acknowledge is waited for 
+		
+		returns: true upon success.
 		*/
 		bool Send(float x, float y, float z, float time, short id, bool ack = true);
 		

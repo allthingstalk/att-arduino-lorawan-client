@@ -141,7 +141,7 @@ class MicrochipLoRaModem: public LoRaModem
 		
 		/** start the send process, but return before everything is done.
 		
-		This operation is performed asynchronically, so if an ack is requested, then the operatioh is not yet complete when this function
+		This operation is performed asynchronically, so if an ack is requested, then the operation is not yet complete when this function
 		returns.  Consecutive ChecSendState() calls should be performed untill the operation has been completed.
 		
 		returns: true if the packet was succesfully send, and the process of waiting for a resonse can begin. Otherwise, it returns false
@@ -153,7 +153,7 @@ class MicrochipLoRaModem: public LoRaModem
 		parameters:
 		- sendResult:  the result of the send operation, if there was still a pending operation.
 		 
-		 returns: if there was none or the operation is done
+		 returns: true if there was no pending send operation or the operation is done
 		*/
 		bool CheckSendState(bool& sendResult);
 		
