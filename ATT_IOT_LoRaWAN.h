@@ -49,6 +49,8 @@ The buffer (a queue) allows the application to gracefully handle situations wher
 not yet allow the device to send data or when the network connection has been temporarily lost.
 Delays between messages can be calculated automatically, based on the current transmission speed, or can be set by a fixed value.
 
+The size of the queue is determined by a 'define' called QUEUESIZE. It's default value is 15.
+
 To use this class:
 - create an instance and 
 - call the Connect() function in order to establish a connection with the NSP. 
@@ -60,6 +62,9 @@ there are also functions available to manage the buffer:
 - `IsQueueEmpty()` check if the queue is currently empty (fast method)
 - `IsQueueFull()` check if the queue is currently full
 - `QueueCount()` get the current nr of elements in the queue
+
+Note: if you want to send data in blocking mode, you can either call 'ProcessQueue' after each 'Send' operation from the queue, or use the
+'Send' function of the modem object directly.
 */
 class ATTDevice
 {
@@ -76,8 +81,8 @@ class ATTDevice
 		ATTDevice(LoRaModem* modem, Stream* monitor = NULL, bool autoCalMinTime=true, unsigned int minTime=MIN_TIME_BETWEEN_SEND);
 		
 		/**
-		Configure the modem and try to connect with the base station using ABP mode.
-		
+		Configure the modem for ABP mode with the device address, app session key and network session key.
+    		
 		parameters:
 		- devAddress: the device address, as provided by the NSP
 		- appKey: the app session key, as provided by the NSP
@@ -127,7 +132,7 @@ class ATTDevice
 		int ProcessQueuePopFailed();
 		
 		/**
-		returns: the current front from the queue, if there is still data in the buffer.
+		removes the current message at the front of the queue, if there is still data in the buffer.
 		*/
 		void Pop();
 		

@@ -22,6 +22,14 @@ InstrumentationPacket::InstrumentationPacket(ATTDevice &device, Stream* monitor)
 	SetId(0x11);
 }
 
+bool InstrumentationPacket::Send(bool ack)
+{
+	unsigned char buffer[220];
+
+	unsigned char length = Write(buffer);
+	return _device->Send(buffer, length, ack);
+}
+
 unsigned char InstrumentationPacket::Write(unsigned char* result)
 {
 	unsigned char curPos =  LoRaPacket::Write(result);
@@ -102,6 +110,7 @@ unsigned char InstrumentationPacket::GetDataSize() {
 //it in the object. Also print every value that was collected to the monitor (if any.)
 bool InstrumentationPacket::BuildInstrumentation(LoRaModem& modem)
 {
+  Reset();
 	PRINTLN("instrumentation values:");
 	SetInstrumentationParam(MODEM, "modem", modem.GetModemId());
 	SetInstrumentationParam(DATA_RATE, "data rate", modem.GetParam(DATA_RATE));

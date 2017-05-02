@@ -35,6 +35,7 @@
 #include <ATT_IOT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
+#include <InstrumentationPacket.h>
 
 #define SERIAL_BAUD 57600
 
@@ -42,20 +43,11 @@ int DigitalSensor = 20;                                        // digital sensor
 MicrochipLoRaModem Modem(&Serial1, &SerialUSB);
 ATTDevice Device(&Modem, &SerialUSB);
 
-struct DemoData
-{
-	short value1;
-	unsigned char value2;
-	unsigned char value3;
-		
-};
 
-
-DemoData data;
+InstrumentationPacket data(Device, &SerialUSB);
 
 void setup() 
 {
-  //pinMode(DigitalSensor, INPUT);					            // initialize the digital pin as an input.          
   digitalWrite(ENABLE_PIN_IO, HIGH);
   delay(3000);
   
@@ -67,29 +59,22 @@ void setup()
   SerialUSB.println("Ready to send data");
 }
 
-int counter = 0;
 unsigned long sendNextAt = 0;
 int sendState = 1;
 
 void loop() 
 {
-	data.value1 = counter;
-	data.value2 = counter;
-	data.value3 = counter;
 	if (sendNextAt < millis()){
-		//Modem.Send(&data, sizeof(data));					//blocking, when this is used, don't call ProcessQueue
-		bool sendSuccess = Device.Send(&data, sizeof(data));				//non blocking
+    data.BuildInstrumentation(Modem);
+		bool sendSuccess = data.Send();				
     if(sendSuccess == false){
-      SerialUSB.println("discarding data");
+      SerialUSB.println("failed to queue instrumentation data");
     }
-		counter++;
-		sendNextAt = millis() + 10000;
+		sendNextAt = millis() + 30000;
 	}
 	sendState = Device.ProcessQueue();
-	if(sendState == -1){
-     SerialUSB.println("failed to send data, removing from queue");
-     Device.Pop();
-  }
+  if(sendState == -1)
+     SerialUSB.println("failed to send instrumentation data");
 }
 
 

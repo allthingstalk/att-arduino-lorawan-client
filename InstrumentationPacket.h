@@ -28,7 +28,51 @@ Original author: Jan Bogaerts (2015-2017)
 
 #define INST_DATA_SiZE 8
 
-//this class represents the ATT cloud platform.
+/**
+  a data object that contains all the instrumentation data of the modem.
+  Use this to get information about the following modem parameters:
+  
+  - Modem (number): the id of the modem. 
+    values: 
+      - 0: unknown
+      - 1: multitech mdot
+      - 2: embit-EMB-LR1272(E)
+      - 3: microchip RN2483
+  - data rate (number): The speed by which the modem sends and receives data. The following data rates are available: 7.8 kHz; 10.4 kHz; 15.6 kHz; 20.8 kHz; 31.2 kHz; 41.7 kHz; 62.5 kHz; 125 kHz; 250 kHz; 500 kHz. The required bandwidth can be selected according to the data requirements as well as the link conditions.
+  - power index (integer): or output power: the power that the modem uses for radio communication, expressed in dBm
+  - adr: Indicates if adaptive data rate is used or not (the gateway determines the speed of the modem)
+  - duty cycle (integer): Duty cycle is the ratio between transmission time versus wait or receive time
+  - nr of gateways (integer): The number of gateways that successfully received the last link check request frame command.
+  - SNR (integer, between -128 and 127):  The signal to noise ration of the last received packet
+  - retransmission count (integer):  nr of times that the modem needed to retry the last transmission.
+  - bandwitdh (integer): the bandwith being used by the modem.
+    values: 
+      - 0: unknown
+      - 1: 125
+      - 2: 250
+      - 3: 500
+  - coding rate (integer): In telecommunication and information theory, the code rate (or information rate[1]) of a forward error correction code is the proportion of the data-stream that is useful (non-redundant). That is, if the code rate is k/n, for every k bits of useful information, the coder generates totally n bits of data, of which n-k are redundant.
+    values:
+      - 0: 4/5
+      - 1: 4/6
+      - 2: 4/7
+      - 3: 4/8
+  - frequency band (integer): The frequency band represents the module’s operation types (region)
+    values:
+      - 0: 433
+      - 1: 868
+  - spreading factor (integer) 
+    values:
+      - 0: unknown
+      - 1: sf 7
+      - 2: sf 8
+      - 3: sf 9
+      - 4: sf 10
+      - 5: sf 11
+      - 6: sf 12
+   
+    Note: for the exact bit layout of the instrumentation packet, see: instrumentation_packet_layout.PNG
+*/
 class InstrumentationPacket: public LoRaPacket
 {
 	public:
