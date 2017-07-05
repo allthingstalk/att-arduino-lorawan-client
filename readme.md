@@ -39,6 +39,8 @@ There are 2 pre-defined data structures included:
 - *Containers*: this is the data format specific for [proximus](https://www.enco.io/) and used by the AllThingsTalk [RDK](http://shop.allthingstalk.com/product/lora-rapid-development-kit/) and [PDK](http://shop.allthingstalk.com/product/lorawan-track-and-trace/) products.
 - *InstrumentationPacket*: this data structure can automatically collect and transmit a number of statistics regarding the modem. 
 
+> For more information on the container format, please check our [payload documentation](http://docs.allthingstalk.com/developers/data/default-payload-conversion/).
+
 The predefined data structures always make use of the ATTDevice class for transmitting the data, so it is buffered and transmitted asynchronically.
 
   
