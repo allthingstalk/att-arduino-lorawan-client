@@ -1,6 +1,6 @@
 ### This library is deprecated
 
-arduinoLoRaWAN client library is deprecated, and will not receive any further updates.
+arduinoLoRaWAN client library is deprecated, and will not receive any further updates. Please use [arduino-lorawan-sdk](https://github.com/allthingstalk/arduino-lorawan-sdk) instead.
 
 ---
 
