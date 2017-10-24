@@ -1,7 +1,13 @@
+### This library is deprecated
+
+arduinoLoRaWAN client library is deprecated, and will not receive any further updates. Please use [arduino-lorawan-sdk](https://github.com/allthingstalk/arduino-lorawan-sdk) instead.
+
+---
+
 arduinoLoRaWAN client library
 =============================
 
-This is a library for the AllThingsTalk ‘Internet of Things’ platform that provides connectivity to the cloud through [LoRa radios](https://www.lora-alliance.org/What-Is-LoRa/Technology).  
+This is a library for the AllThingsTalk â€˜Internet of Thingsâ€™ platform that provides connectivity to the cloud through [LoRa radios](https://www.lora-alliance.org/What-Is-LoRa/Technology).  
 
 This library has been developed for the folowing hardware:
 - LoRa modems:
